@@ -15,28 +15,28 @@ colnames(thisData)<-gsub('\\.+','\n',colnames(thisData))
 plot(thisData,col='#00000077',pch='.',cex=2.5)
 dev.off()
 
-align<-levenAlign(hiv$seq,hiv$seq[1])
+#align<-levenAlign(hiv$seq,hiv$seq[1])
 
 
 
 uniqSample<-unique(hiv$sample[order(hiv$Pair.ID..,hiv$Donor.or.Recipient)])
 pairId<-sub('.* ','',uniqSample)
 labs<-factor(hiv$sample,levels=uniqSample)
-cols<-c('#FF0000','#0000FF')
+cols<-c('#FF000066','#0000FF66')
 isChange<-c(FALSE,pairId[-1]!=pairId[-length(pairId)])
 changes<-which(isChange)
 labPos<-1:length(uniqSample)+cumsum(isChange)*.5
 xPos<-labPos[as.numeric(labs)]
-pdf('out/vpPlot.pdf',height=6,width=8)
+pdf('out/untreated_vpPlot.pdf',height=4,width=8)
 for(ii in varCols){
   thisData<-hiv[,ii]
-  selector<-!is.na(thisData)
+  selector<-!is.na(thisData)&hiv$select=='UT'
   par(mar=c(6.5,4,.1,.1),mgp=c(3,.7,0))
   plot(1,1,las=2,ylab=colnames(hiv)[ii],xlim=range(labPos),ylim=range(thisData,na.rm=TRUE),xaxt='n',xlab='',type='n')
   axis(1,labPos,uniqSample,las=2)
   xOffset<-offsetX(thisData[selector],labs[selector])
   rect(c(1,labPos[changes])-.75,par('usr')[3],c(labPos[changes],length(pairId)+1)-.75,par('usr')[4],col=rep(c(NA,'#00000011'),length.out=length(changes)),border=NA)
-  points(xPos[selector]+xOffset,thisData[selector],pch='.',cex=3,col=cols[hiv$donor[selector]+1])
+  points(xPos[selector]+xOffset,thisData[selector],cex=.6,col=NA,bg=cols[hiv$donor[selector]+1],pch=21)
 }
 dev.off()
 
