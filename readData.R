@@ -7,10 +7,13 @@ hiv<-read.csv('data.csv',stringsAsFactors=FALSE)
 hiv<-hiv[,apply(hiv,2,function(x)!all(is.na(x)))]
 hiv$seq<-toupper(gsub('[ \n]','',hiv$Sequence))
 hiv$select<-sapply(strsplit(hiv$Renamed,'\\.'),'[',4)
+hiv$fluid<-sapply(strsplit(hiv$Renamed,'\\.'),'[',2)
 hiv$donorRec<-sub(' ','-',hiv$Donor.or.Recipient)
 hiv$sample<-paste(hiv$donorRec,hiv$Pair.ID..)
 hiv$donor<-grepl('Donor',hiv$Donor.or.Recipient)
 hiv$sampleSelect<-paste(hiv$donorRec,hiv$Pair.ID..,hiv$select)
+hiv$sampleFluid<-paste(hiv$donorRec,hiv$Pair.ID..,hiv$fluid)
+write.fa(hiv$name,hiv$seq,'hiv.fa')
 
 varCols<-which(colnames(hiv)=='Replicative.capacity.Single.Donor.p24.d7'):which(colnames(hiv)=='Bnaber.IC50')
 pdf('out/pairs.pdf',width=12,height=12)
@@ -34,7 +37,7 @@ xPos<-labPos[as.numeric(labs)]
 pdf('out/untreated_vpPlot.pdf',height=4,width=8)
 for(ii in varCols){
   thisData<-hiv[,ii]
-  selector<-!is.na(thisData)&hiv$select=='UT'
+  selector<-!is.na(thisData)&hiv$select=='UT'&hiv$fluid=='PL'
   par(mar=c(6.5,4,.1,.1),mgp=c(3,.7,0))
   plot(1,1,las=2,ylab=colnames(hiv)[ii],xlim=range(labPos),ylim=range(thisData,na.rm=TRUE),xaxt='n',xlab='',type='n')
   axis(1,labPos,uniqSample,las=2)
@@ -43,6 +46,11 @@ for(ii in varCols){
   points(xPos[selector]+xOffset,thisData[selector],cex=.9,col=NA,bg=cols[hiv$donor[selector]+1],pch=21)
 }
 dev.off()
+
+
+
+
+
 
 uniqSample<-unique(hiv$sampleSelect[order(hiv$Pair.ID..,hiv$donorRec,c('UT'=1,'A2'=2,'BE'=3)[hiv$select])])
 pairId<-sub('^[A-Za-z0-9-]+ ([0-9]) [A-Z0-9]+','\\1',uniqSample)
@@ -73,4 +81,36 @@ for(ii in varCols){
   points(xPos[selector]+xOffset,thisData[selector],cex=.9,col=NA,bg=cols[paste(hiv$donor,hiv$select)[selector]],pch=21)
 }
 dev.off()
+
+
+#Env  content ( Env :RT ratios)
+#Infectivity
+#Replicative capacity
+#IFN alpha IC50
+selectVars<-c('Env.RT','Infectivity.RLU.pg.RT...T1249.','Replicative.capacity.Pool.Donor.p24.d7','IFNa2.PD.IC50..U.ml.')
+
+uniqSample<-unique(hiv$sampleFluid[order(hiv$Pair.ID..,hiv$Donor.or.Recipient,c('PL'=1,'CV'=2,'SE'=3)[hiv$fluid])])
+pairId<-sub('.* ([0-9]+) [A-Z]+','\\1',uniqSample)
+labs<-factor(hiv$sampleFluid,levels=uniqSample)
+cols<-c('TRUE PL'='#FF000055','TRUE CV'='#0000FF55','TRUE SE'='#0000FF55','FALSE PL'='#FF770055')
+isChange<-c(FALSE,pairId[-1]!=pairId[-length(pairId)])
+changes<-which(isChange)
+labPos<-1:length(uniqSample)+cumsum(isChange)*.5
+xPos<-labPos[as.numeric(labs)]
+pdf('out/selectVar.pdf',height=8,width=7)
+layout(matrix(c(length(selectVars)+2,1:(length(selectVars)+1)),ncol=1),height=c(.05,rep(1,length(selectVars)),.6))
+for(ii in selectVars){
+  thisData<-hiv[,ii]
+  selector<-!is.na(thisData)&hiv$select=='UT'
+  par(mar=c(0,4,0,.1),mgp=c(3,.7,0))
+  plot(1,1,las=2,ylab=ii,xlim=range(labPos),ylim=range(thisData,na.rm=TRUE)*c(.9,1.1),xaxt='n',xlab='',type='n',log='y',yaxt='n')
+  xOffset<-offsetX(thisData[selector],labs[selector])
+  rect(c(1,labPos[changes])-.75,10^par('usr')[3],c(labPos[changes],length(pairId)+1)-.75,10^par('usr')[4],col=rep(c(NA,'#00000011'),length.out=length(changes)),border=NA)
+  points(xPos[selector]+xOffset,thisData[selector],cex=.9,col=NA,bg=cols[paste(hiv$donor,hiv$fluid)[selector]],pch=21)
+  #axis(1,labPos,rep('',length(labPos)))
+}
+axis(1,labPos,uniqSample,las=2)
+dev.off()
+
+
 
