@@ -104,6 +104,8 @@ for(ii in selectVars){
   selector<-!is.na(thisData)&hiv$select=='UT'
   par(mar=c(0,4,0,.1),mgp=c(3,.7,0))
   plot(1,1,las=2,ylab=ii,xlim=range(labPos),ylim=range(thisData,na.rm=TRUE)*c(.9,1.1),xaxt='n',xlab='',type='n',log='y',yaxt='n')
+  prettyY<-seq(ceiling(log10(min(thisData,na.rm=TRUE))),floor(log10(max(thisData,na.rm=TRUE))),1)
+  axis(2,10^prettyY,10^prettyY,las=2)
   xOffset<-offsetX(thisData[selector],labs[selector])
   rect(c(1,labPos[changes])-.75,10^par('usr')[3],c(labPos[changes],length(pairId)+1)-.75,10^par('usr')[4],col=rep(c(NA,'#00000011'),length.out=length(changes)),border=NA)
   points(xPos[selector]+xOffset,thisData[selector],cex=.9,col=NA,bg=cols[paste(hiv$donor,hiv$fluid)[selector]],pch=21)
