@@ -136,17 +136,24 @@ thisData<-hiv[hiv$select=='UT'&hiv$fluid=='PL',]
 infectData<-tapply(thisData$Infectivity.RLU.pg.RT...T1249.,list(thisData$Donor.or.Recipient,thisData$Pair.ID..),median,na.rm=TRUE)
 infectData25<-tapply(thisData$Infectivity.RLU.pg.RT...T1249.,list(thisData$Donor.or.Recipient,thisData$Pair.ID..),quantile,probs=c(.25),na.rm=TRUE)
 infectData75<-tapply(thisData$Infectivity.RLU.pg.RT...T1249.,list(thisData$Donor.or.Recipient,thisData$Pair.ID..),quantile,probs=c(.75),na.rm=TRUE)
-ylim<-range(infectData,na.rm=TRUE)
-xpos<-((1:ncol(infectData))/ncol(infectData)-.5)*.2
+ylim<-range(cbind(infectData75,infectData25),na.rm=TRUE)
+xpos<-(order(infectData['Donor',])/ncol(infectData)-.5)*.2
 #xpos<-order(ifelse(is.na(infectData[2,]),infectData[3,],infectData[2,]))
 cols<-rainbow.lab(ncol(infectData),alpha=.7)
+rectWidth<-.02
 pdf('out/pairInfect.pdf')
   plot(1,1,type='n',xlim=c(.75,2.25),ylim=ylim,ylab='Infectivity (RLU/pg RT)',xlab='',xaxt='n',log='y',las=1)
   axis(1,1:2,c('Donor','Recipient'))
   for(ii in 1:ncol(infectData)){
-    segments(1+xpos[ii],infectData['Donor',ii],2+xpos[ii],infectData[rownames(infectData)!='Donor',ii],col=cols[ii],lty=2)
-    segments(1+xpos[ii],infectData25['Donor',ii],1+xpos[ii],infectData75['Donor',ii],col=cols[ii])
-    segments(2+xpos[ii],infectData25[rownames(infectData)!='Donor',ii],2+xpos[ii],infectData75[rownames(infectData)!='Donor',ii],col=cols[ii])
+    dPos<-1+xpos[ii]-rectWidth
+    rPos<-2+xpos[ii]-rectWidth
+    segments(dPos,infectData['Donor',ii],rPos,infectData[rownames(infectData)!='Donor',ii],col=cols[ii],lty=1,lwd=2)
+    rect(dPos-rectWidth,infectData25['Donor',ii],dPos+rectWidth,infectData75['Donor',ii],col=cols[ii])
+    rect(rPos-rectWidth,infectData25[rownames(infectData)!='Donor',ii],rPos+rectWidth,infectData75[rownames(infectData)!='Donor',ii],col=cols[ii])
+    thisDonor<-hiv[hiv$Pair.ID..==colnames(infectData)[ii]&hiv$select=='UT'&hiv$donor,]
+    thisRec<-hiv[hiv$Pair.ID..==colnames(infectData)[ii]&hiv$select=='UT'&!hiv$donor,]
+    points(rep(dPos,nrow(thisDonor)),thisDonor$Infectivity.RLU.pg.RT...T1249.,bg=cols[ii],pch=21,cex=.4,col=NA)
+    points(rep(rPos,nrow(thisRec)),thisRec$Infectivity.RLU.pg.RT...T1249.,bg=cols[ii],pch=21,cex=.4,col=NA)
   }
 dev.off()
 
