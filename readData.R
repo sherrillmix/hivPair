@@ -1,6 +1,7 @@
 library(levenR)
 library(vipor)
 library(dnar)
+library(dnaplotr)
 #library(beeswarm)
 
 hiv<-read.csv('data.csv',stringsAsFactors=FALSE)
@@ -157,3 +158,11 @@ pdf('out/pairInfect.pdf')
   }
 dev.off()
 
+
+align<-read.fa('AlignSeq.nt.fasta.gz')
+seqMat<-seqSplit(align$seq)[-1,]
+seqMat<-seqMat[,apply(seqMat,2,function(x)sum(x!='-'))>10]
+apply(seqMat,2,table)
+png('test.png',width=2000,height=2000);
+plotDNA(apply(seqMat,1,paste,collapse=''),groups=hiv$Pair.ID..)
+dev.off()
