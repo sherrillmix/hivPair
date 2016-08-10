@@ -125,11 +125,12 @@ infectData<-tapply(thisData$Infectivity.RLU.pg.RT...T1249.,list(thisData$Donor.o
 infectData25<-tapply(thisData$Infectivity.RLU.pg.RT...T1249.,list(thisData$Donor.or.Recipient,thisData$Pair.ID..),quantile,probs=c(.25),na.rm=TRUE)
 infectData75<-tapply(thisData$Infectivity.RLU.pg.RT...T1249.,list(thisData$Donor.or.Recipient,thisData$Pair.ID..),quantile,probs=c(.75),na.rm=TRUE)
 ylim<-range(cbind(infectData75,infectData25),na.rm=TRUE)
-xpos<-(order(infectData['Donor',])/ncol(infectData)-.5)*.2
+xpos<-(order(infectData['Donor',])/ncol(infectData)-.5)*.25
 #xpos<-order(ifelse(is.na(infectData[2,]),infectData[3,],infectData[2,]))
 cols<-rainbow.lab(ncol(infectData),alpha=.7)
-rectWidth<-.02
-pdf('out/pairInfect.pdf')
+rectWidth<-.025
+pdf('out/pairInfect.pdf',width=4,height=4)
+  par(mar=c(2,4,.1,.1))
   plot(1,1,type='n',xlim=c(.75,2.25),ylim=ylim,ylab='Infectivity (RLU/pg RT)',xlab='',xaxt='n',log='y',las=1)
   axis(1,1:2,c('Donor','Recipient'))
   for(ii in 1:ncol(infectData)){
