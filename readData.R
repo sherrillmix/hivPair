@@ -20,8 +20,9 @@ hiv$sampleFluid<-paste(hiv$donorRec,hiv$Pair.ID..,hiv$fluid)
 write.fa(hiv$Renamed,hiv$seq,'hiv.fa')
 
 align<-read.fa('data/AlignSeq.nt.fasta.gz')
-seqMat<-seqSplit(align$seq)[-1,]
-refPos<-cumsum(seqMat[1,]!='-')
+seqMat<-seqSplit(align$seq)
+refPos<-cumsum(seqMat[1,])
+seqMat<-seqMat[-1,]
 colnames(seqMat)<-sprintf('pos%s.%s',refPos,ave(refPos,refPos,FUN=function(x)1:length(x)))
 nBase<-apply(seqMat,2,function(x)sum(x!='-'))
 startEnd<-range(which(nBase/nrow(seqMat)>.9))
@@ -37,5 +38,25 @@ plotDNA(apply(seqMat,1,paste,collapse=''),groups=paste(hiv$Pair.ID..,hiv$donor))
 dev.off()
 
 
-aa<-readFaDir('data','aa.fasta.gz')
+aa<-readFaDir('data','^[^LA].*aa.fasta.gz$') #don't read LTR since no AA or AlignSeq
+bigAA<-tapply(aa$seq,aa$name,paste,collapse='')
+bigAA<-bigAA[hiv$Renamed]
+aaMat<-seqSplit(bigAA)
+refPos<-cumsum(aaMat[1,])
+aaMat<-aaMat[-1,]
+colnames(aaMat)<-sprintf('pos%s.%s',refPos,ave(refPos,refPos,FUN=function(x)1:length(x)))
+nBase<-apply(aaMat,2,function(x)sum(x!='-'))
+seqMat<-seqMat[,nBase>10]
+onlyDiffAA<-aaMat[,apply(aaMat,2,function(x)length(unique(x[x!='-']))>1)]
+
+
+png('out/diffAA.png',width=2000,height=2000)
+par(mar=c(4,4,1,6))
+plotDNA(apply(onlyDiffAA,1,paste,collapse='')[hiv$donor],groups=paste(hiv$Pair.ID..,hiv$select)[hiv$donor])
+dev.off()
+png('out/alignAA.png',width=2000,height=2000)
+par(mar=c(4,4,1,6))
+plotDNA(apply(aaMat,1,paste,collapse=''),groups=paste(hiv$Pair.ID..,hiv$donor))
+dev.off()
+
 
