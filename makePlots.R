@@ -159,6 +159,7 @@ for(plotType in c('box','points')){
           offsetPos<-offsetX(thisDonor[,var],width=.025)
           #offsetPos<-swarmx(rep(0,nrow(thisDonor)),thisDonor[,var],cex=.4,log='y')$x
           points(rep(dPos,nrow(thisDonor))+offsetPos,thisDonor[,var],bg=cols[thisPair],pch=21,cex=pointSize,col=NA)
+          segments(dPos+.02,median(thisDonor[,var]),dPos-.02,median(thisDonor[,var]),col=cols[thisPair])
         }else if(plotType=='box'){
           box<-boxplot(thisDonor[,var],plot=FALSE)
           segments(dPos,min(thisDonor[,var]),dPos,max(thisDonor[,var]),col=cols2[thisPair])
@@ -175,6 +176,7 @@ for(plotType in c('box','points')){
             offsetPos<-offsetX(thisRec[[jj]][,var],width=.025)
             #offsetPos<-swarmx(rep(0,nrow(thisRec[[jj]])),thisRec[[jj]][,var],cex=.4,log='y')$x
             points(rep(rPos[[jj]],nrow(thisRec[[jj]]))+offsetPos,thisRec[[jj]][,var],bg=cols[thisPair],pch=21,cex=pointSize,col=NA)
+            segments(rPos[[jj]]+.02,median(thisRec[[jj]][,var]),rPos[[jj]]-.02,median(thisRec[[jj]][,var]),col=cols[thisPair])
           }else if(plotType=='box'){
             segments(dPos,median(thisDonor[,var]),rPos[[jj]],median(thisRec[[jj]][,var]),col=thisCol,lty=1,lwd=2)
             segments(rPos[[jj]],min(thisRec[[jj]][,var]),rPos[[jj]],max(thisRec[[jj]][,var]),col=cols2[thisPair])
