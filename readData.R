@@ -17,7 +17,7 @@ hiv$sample<-paste(hiv$donorRec,hiv$Pair.ID..)
 hiv$donor<-grepl('Donor',hiv$Donor.or.Recipient)
 hiv$sampleSelect<-paste(hiv$donorRec,hiv$Pair.ID..,hiv$select)
 hiv$sampleFluid<-paste(hiv$donorRec,hiv$Pair.ID..,hiv$fluid)
-write.fa(hiv$name,hiv$seq,'hiv.fa')
+write.fa(hiv$Renamed,hiv$seq,'hiv.fa')
 
 align<-read.fa('data/AlignSeq.nt.fasta.gz')
 seqMat<-seqSplit(align$seq)[-1,]
@@ -37,4 +37,5 @@ plotDNA(apply(seqMat,1,paste,collapse=''),groups=paste(hiv$Pair.ID..,hiv$donor))
 dev.off()
 
 
+aa<-readFaDir('data','aa.fasta.gz')
 
