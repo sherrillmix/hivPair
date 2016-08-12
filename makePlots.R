@@ -83,16 +83,18 @@ selectVars<-c(
   #'Replicative.capacity.Single.Donor.p24.d7'='Single donor\nReplicative capactity\n(day 7 p24)',
   #'IFNa2.SD.IC50..U.ml.'='Single donor\nIFNa2 IC50 (U/ml)',
 
-logAxis<-function(x,axisNum=2,spreadRange=1.3){
+logAxis<-function(x,axisNum=2,addExtra=TRUE,spreadRange=1.3,...){
   minX<-min(log10(x),na.rm=TRUE) 
   maxX<-max(log10(x),na.rm=TRUE) 
   allTicks<-unlist(lapply(floor(minX):ceiling(maxX),function(x)1:9*10^x))
   allTicks<-allTicks[allTicks<10^maxX*spreadRange & allTicks>10^minX/spreadRange]
   axis(axisNum,allTicks,rep('',length(allTicks)),tcl=-.2)
   prettyY<-seq(ceiling(log10(min(x,na.rm=TRUE))),floor(log10(max(x,na.rm=TRUE))),1)
-  if(length(prettyY)<5)prettyY<-unique(c(prettyY,prettyY+log10(5),prettyY-log10(2)))
-  if(length(prettyY)<5)prettyY<-unique(c(prettyY,prettyY+log10(2),prettyY-log10(5)))
-  axis(axisNum,10^prettyY,10^prettyY,las=2)
+  if(addExtra){
+    if(length(prettyY)<5)prettyY<-unique(c(prettyY,prettyY+log10(5),prettyY-log10(2)))
+    if(length(prettyY)<5)prettyY<-unique(c(prettyY,prettyY+log10(2),prettyY-log10(5)))
+  }
+  axis(axisNum,10^prettyY,10^prettyY,las=2,...)
 }
 uniqSample<-unique(hiv$sampleFluid[order(hiv$Pair.ID..,hiv$Donor.or.Recipient,c('PL'=1,'CV'=2,'SE'=3)[hiv$fluid])])
 pairId<-sub('.* ([0-9]+) [A-Z]+','\\1',uniqSample)
@@ -122,16 +124,18 @@ dev.off()
 
 
 
+
 for(plotType in c('box','points')){
   for(var in names(selectVars)){
     message(var)
     thisData<-hiv[hiv$select=='UT'&hiv$fluid=='PL'&!is.na(hiv[,var]),]
     infectData<-tapply(thisData[,var][thisData$donor],thisData$Pair.ID..[thisData$donor],median,na.rm=TRUE)
-    infectData<-sort(infectData,decreasing=TRUE)
+    #infectData<-sort(infectData,decreasing=TRUE)
     ylim<-range(thisData[,var],na.rm=TRUE)
     pairOrder<-order(infectData)
-    cols<-rainbow.lab(length(infectData),alpha=.7)
-    cols2<-rainbow.lab(length(infectData),alpha=.3)
+    pairOrder<-1:length(infectData)
+    cols<-rainbow.lab(length(infectData),alpha=.5)
+    cols2<-rainbow.lab(length(infectData))
     names(cols)<-names(cols2)<-sort(unique(thisData$Pair.ID..))
     #rectWidth<-.004
     nDonor<-length(infectData)
@@ -139,11 +143,12 @@ for(plotType in c('box','points')){
     nRecs<-length(unique(paste(thisData$Donor.or.Recipient,thisData$Pair.ID..)[!thisData$donor]))
     recStep<-.6/(nRecs-1)
     pdf(sprintf('out/pair/pair_%s_%s.pdf',plotType,var),width=4,height=4)
-      par(mar=c(1.1,4,.1,.1))
-      plot(1,1,type='n',xlim=c(.6,2.4),ylim=ylim,ylab=selectVars[var],xlab='',xaxt='n',log='y',las=1,mgp=c(3,.7,0))
+      par(mar=c(6.1,3,.1,.1))
+      plot(1,1,type='n',xlim=c(.6,2.4),ylim=ylim,ylab=selectVars[var],xlab='',xaxt='n',log='y',las=1,mgp=c(2,.7,0),yaxt='n')
+      logAxis(ylim,mgp=c(3,.8,0),addExtra=FALSE)
       axis(1,1:2,c('Donor','Recipient'),mgp=c(3,.1,0),tcl=0)
       box()
-      abline(v=1.5)
+      #abline(v=1.5)
       donorPos<--.3
       recPos<--.3
       pointSize<-.4
@@ -154,22 +159,10 @@ for(plotType in c('box','points')){
         thisRec<-split(thisRec,thisRec$Donor.or.Recipient)
         dPos<-1+donorPos
         rPos<-2+recPos+0:(length(thisRec)-1)*recStep
-        if(plotType=='points'){
-          segments(dPos,min(thisDonor[,var]),dPos,max(thisDonor[,var]),col=cols2[thisPair])
-          offsetPos<-offsetX(thisDonor[,var],width=.025)
-          #offsetPos<-swarmx(rep(0,nrow(thisDonor)),thisDonor[,var],cex=.4,log='y')$x
-          points(rep(dPos,nrow(thisDonor))+offsetPos,thisDonor[,var],bg=cols[thisPair],pch=21,cex=pointSize,col=NA)
-          segments(dPos+.02,median(thisDonor[,var]),dPos-.02,median(thisDonor[,var]),col=cols[thisPair])
-        }else if(plotType=='box'){
-          box<-boxplot(thisDonor[,var],plot=FALSE)
-          segments(dPos,min(thisDonor[,var]),dPos,max(thisDonor[,var]),col=cols2[thisPair])
-          #rect(dPos+.02,box$conf[1,1],dPos-.02,box$conf[2,1],col=cols2[thisPair])
-          rect(dPos+.02,box$stats[2,1],dPos-.02,box$stats[4,1],col=cols2[thisPair])
-          segments(dPos+.02,median(thisDonor[,var]),dPos-.02,median(thisDonor[,var]))
-        }
         for(jj in 1:length(thisRec)){
-          thisP<-wilcox.test(thisRec[[jj]][,var],thisDonor[,var])$p.value
-          thisCol<-ifelse(thisP<.05,cols[thisPair],gray(0,alpha=.1))
+          #thisP<-wilcox.test(thisRec[[jj]][,var],thisDonor[,var])$p.value
+          #thisCol<-ifelse(thisP<.05,cols[thisPair],gray(0,alpha=.1))
+          thisCol<-cols[thisPair]#ifelse(thisP<.05,cols[thisPair],gray(0,alpha=.1))
           if(plotType=='points'){
             segments(dPos,median(thisDonor[,var]),rPos[[jj]],median(thisRec[[jj]][,var]),col=thisCol,lty=1,lwd=2)
             segments(rPos[[jj]],min(thisRec[[jj]][,var]),rPos[[jj]],max(thisRec[[jj]][,var]),col=cols2[thisPair])
@@ -186,10 +179,25 @@ for(plotType in c('box','points')){
             segments(rPos[[jj]]+.02,median(thisRec[[jj]][,var]),rPos[[jj]]-.02,median(thisRec[[jj]][,var]))
           }
         }
+        if(plotType=='points'){
+          segments(dPos,min(thisDonor[,var]),dPos,max(thisDonor[,var]),col=cols2[thisPair])
+          offsetPos<-offsetX(thisDonor[,var],width=.025)
+          #offsetPos<-swarmx(rep(0,nrow(thisDonor)),thisDonor[,var],cex=.4,log='y')$x
+          points(rep(dPos,nrow(thisDonor))+offsetPos,thisDonor[,var],bg=cols[thisPair],pch=21,cex=pointSize,col=NA)
+          segments(dPos+.02,median(thisDonor[,var]),dPos-.02,median(thisDonor[,var]),col=cols[thisPair])
+        }else if(plotType=='box'){
+          box<-boxplot(thisDonor[,var],plot=FALSE)
+          segments(dPos,min(thisDonor[,var]),dPos,max(thisDonor[,var]),col=cols2[thisPair])
+          #rect(dPos+.02,box$conf[1,1],dPos-.02,box$conf[2,1],col=cols2[thisPair])
+          rect(dPos+.02,box$stats[2,1],dPos-.02,box$stats[4,1],col=cols2[thisPair])
+          segments(dPos+.02,median(thisDonor[,var]),dPos-.02,median(thisDonor[,var]))
+        }
         donorPos<-donorPos+donorStep
         recPos<-recPos+recStep*length(thisRec)
       }
-      legend('bottomright',sprintf('%s ',names(cols)),lwd=2,col=cols,pch=21,pt.cex=.4,pt.bg=cols2,ncol=2,x.intersp=.2,inset=.02,title='Pair',bty='o',cex=.9,box.col='#00000055')
+      #legend('bottomright',sprintf('%s ',names(cols)),lwd=2,col=cols,pt.cex=.4,pt.bg=cols2,ncol=2,x.intersp=.2,inset=.02,title='Pair',bty='o',cex=.9,box.col='#00000055') #,pch=21
+      legend(1.5,convertLineToUser(1.5,1),sprintf('%s',pairNames[names(cols)]),lwd=2,col=cols2,pt.cex=.4,pt.bg=cols2,ncol=2,inset=-.02,title='Pair',bty='o',cex=.7,xpd=NA,yjust=1,xjust=.5) #,pch=21
+      #legend('bottomright',sprintf('%s ',names(cols)),lwd=2,col=cols,pt.cex=.4,pt.bg=cols2,ncol=2,x.intersp=.2,inset=.02,title='Pair',bty='o',cex=.9,box.col='#00000055') #,pch=21
     dev.off()
     pdf(sprintf('out/pair/box_%s.pdf',var),width=7,height=4)
      par(las=2,mar=c(6,4,.1,.1))
