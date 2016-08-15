@@ -7,7 +7,7 @@ out<-mclapply(names(selectVars),function(targetCol){
   #modelInput$pair<-as.factor(hiv$Pair.ID..)
   modelMatrix<-model.matrix(formula(sprintf('~ %s',paste(colnames(modelInput),collapse='+'))),modelInput)
   selector<-hiv$donor
-  target<-log2(hiv[selector,targetCol])#-log2(ave(hiv[selector,targetCol],hiv[selector,'Pair.ID..'],FUN=function(x)mean(x,na.rm=TRUE)))
+  target<-log2(hiv[selector,targetCol])-log2(ave(hiv[selector,targetCol],hiv[selector,'Pair.ID..'],FUN=function(x)mean(x,na.rm=TRUE)))
   fitAlpha<-cv.glmnet(modelMatrix[selector,][!is.na(target),],target[!is.na(target)],nfolds=sum(!is.na(target)),grouped=FALSE)
   #fitBeta<-cv.glmnet(modelMatrix[hiv$donor&!is.na(hiv$IFNbeta.PD.IC50..ng.ml.),],log2(hiv$IFNbeta.PD.IC50..ng.ml.[hiv$donor&!is.na(hiv$IFNbeta.PD.IC50..ng.ml.)]),nfolds=sum(hiv$donor&!is.na(hiv$IFNbeta.PD.IC50..ng.ml.)),grouped=FALSE)
   multiFit<-lapply(unique(hiv$Pair.ID..),function(xx){
