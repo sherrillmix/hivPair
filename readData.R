@@ -36,6 +36,7 @@ nBase<-apply(seqMat,2,function(x)sum(x!='-'))
 startEnd<-range(which(nBase/nrow(seqMat)>.9))
 seqMat<-seqMat[,nBase>10&1:ncol(seqMat) %in% startEnd[1]:startEnd[2]]
 onlyDiff<-seqMat[,apply(seqMat,2,function(x)length(unique(x[x!='-']))>1)]
+
 png('out/diff.png',width=2000,height=2000)
 par(mar=c(4,4,1,6))
 plotDNA(apply(onlyDiff,1,paste,collapse='')[hiv$donor],groups=paste(hiv$Pair.ID..,hiv$select)[hiv$donor])
@@ -68,3 +69,16 @@ plotAA(apply(aaMat,1,paste,collapse=''),groups=paste(hiv$Pair.ID..,hiv$donor))
 dev.off()
 
 
+var<-read.csv('data/varLoops.csv',header=TRUE,check.names=FALSE)
+colnames(var)<-sprintf('CH%s',colnames(var))
+if(any(!colnames(var) %in% c(unlist(recs),unlist(donors))))stop(simpleError('Unknown donor/recipient'))
+if(any(!c(unlist(recs),unlist(donors)) %in% colnames(var)))stop(simpleError('Missing donor/recipient'))
+
+donorLengths<-lapply(donors,function(x)var[!is.na(var[,x]),x])
+recLengths<-lapply(recs,function(x)lapply(x,function(y)var[!is.na(var[,y]),y]))
+recLengths<-lapply(recLengths,function(xx)sapply(xx,function(yy){
+  lengthTab<-table(yy)   
+  maxLength<-names(lengthTab)[which.max(lengthTab)]
+  if(any(lengthTab[maxLength]/sum(lengthTab)<.75))stop(simpleError('Unclear recipient length'))
+  return(as.numeric(maxLength))
+}))
