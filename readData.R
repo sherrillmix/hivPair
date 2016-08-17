@@ -24,6 +24,19 @@ recs<-with(hiv[!hiv$donor,],tapply(baseName,Pair.ID..,unique))
 pairNames<-mapply(function(x,y)paste(paste(x,collapse='/'),paste(y,collapse='/'),sep='-'),donors,recs)
 write.fa(hiv$seqId,hiv$seq,'hiv.fa')
 
+#calculate scaled replicative capacity
+hiv[hiv$select=='UT','maxSD']<-ave(hiv[hiv$select=='UT','Replicative.capacity.Single.Donor.p24.d7'], hiv[hiv$select=='UT','Pair.ID..'], FUN=max)
+hiv[hiv$select=='UT','maxPD']<-ave(hiv[hiv$select=='UT','Replicative.capacity.Pool.Donor.p24.d7'], hiv[hiv$select=='UT','Pair.ID..'], FUN=max)
+#fill in the treated ones
+hiv$maxSD<-ave(hiv$maxSD,hiv$Pair.ID..,FUN=function(x)max(x,na.rm=TRUE))
+hiv$maxPD<-ave(hiv$maxPD,hiv$Pair.ID..,FUN=function(x)max(x,na.rm=TRUE))
+hiv$propSD<-hiv$Replicative.capacity.Single.Donor.p24.d7/hiv$maxSD
+hiv$propPD<-hiv$Replicative.capacity.Pool.Donor.p24.d7/hiv$maxPD
+#take mean of pooled and single
+hiv$meanRepCap<-(hiv$propSD+hiv$propPD)/2
+write.csv(hiv[,c('Renamed','Original.name','Pair.ID..','select','Replicative.capacity.Single.Donor.p24.d7','Replicative.capacity.Pool.Donor.p24.d7','maxSD','maxPD','propSD','propPD','meanRepCap')],'out/repCap.csv')
+
+
 refName<-'B.FR.83.HXB2_LAI_IIIB_BRU_K03455'
 align<-read.fa('data/AlignSeq.nt.fasta.gz')
 rownames(align)<-align$name
