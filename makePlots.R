@@ -77,9 +77,11 @@ dev.off()
 selectVars<-c(
   'Env.RT'='Env/RT',
   'Infectivity.RLU.pg.RT...T1249.'='Infectivity (RLU/pg RT)',
-  'Replicative.capacity.Pool.Donor.p24.d7'='Pooled donor\nReplicative capactity (day 7 p24)',
-  'IFNa2.PD.IC50..U.ml.'='Pooled donor\nIFNa2 IC50 (U/ml)'
+  'Replicative.capacity.Pool.Donor.p24.d7'='Pooled donor\nReplicative capacity (day 7 p24)',
+  'IFNa2.PD.IC50..U.ml.'='Pooled donor\nIFNa2 IC50 (U/ml)',
+  'meanRepCap'='Mean replicative capacity\n(proportion of maximum day 7 p24)'
 )
+nonLog<-'meanRepCap'
   #'Replicative.capacity.Single.Donor.p24.d7'='Single donor\nReplicative capactity\n(day 7 p24)',
   #'IFNa2.SD.IC50..U.ml.'='Single donor\nIFNa2 IC50 (U/ml)',
 
@@ -129,10 +131,12 @@ for(fluid in list('PL',unique(hiv$fluid))){
   for(plotType in c('box','points')){
     for(var in names(selectVars)){
       message(var)
+      isLog<-!var %in% nonLog
       thisData<-hiv[hiv$select=='UT'&hiv$fluid %in% fluid&!is.na(hiv[,var]),]
       infectData<-tapply(thisData[,var][thisData$donor],thisData$Pair.ID..[thisData$donor],median,na.rm=TRUE)
       #infectData<-sort(infectData,decreasing=TRUE)
       ylim<-range(thisData[,var],na.rm=TRUE)
+      if(!isLog)ylim<-c(0,1)
       pairOrder<-order(infectData)
       pairOrder<-1:length(infectData)
       cols<-rainbow.lab(length(infectData),alpha=.5)
@@ -144,9 +148,10 @@ for(fluid in list('PL',unique(hiv$fluid))){
       nRecs<-length(unique(paste(thisData$Donor.or.Recipient,thisData$Pair.ID..)[!thisData$donor]))
       recStep<-.6/(nRecs-1)
       pdf(sprintf('out/pair/pair_%s_%s_%s.pdf',plotType,var,paste(fluid,collapse='-')),width=4,height=4)
-        par(mar=c(6.1,3,.1,.1))
-        plot(1,1,type='n',xlim=c(.6,2.4),ylim=ylim,ylab=selectVars[var],xlab='',xaxt='n',log='y',las=1,mgp=c(2,.7,0),yaxt='n')
-        logAxis(ylim,mgp=c(3,.8,0),addExtra=FALSE)
+        par(mar=c(6.1,4,.1,.1),lheight=.9)
+        plot(1,1,type='n',xlim=c(.6,2.4),ylim=ylim,ylab=selectVars[var],xlab='',xaxt='n',log=ifelse(isLog,'y',''),las=1,mgp=c(2,.7,0),yaxt='n')
+        if(isLog)logAxis(ylim,mgp=c(3,.8,0),addExtra=FALSE)
+        else axis(2,pretty(0:1),las=1,mgp=c(3,.5,0),tcl=-.35)
         axis(1,1:2,c('Donor','Recipient'),mgp=c(3,.1,0),tcl=0)
         box()
         #abline(v=1.5)
@@ -199,10 +204,6 @@ for(fluid in list('PL',unique(hiv$fluid))){
         #legend('bottomright',sprintf('%s ',names(cols)),lwd=2,col=cols,pt.cex=.4,pt.bg=cols2,ncol=2,x.intersp=.2,inset=.02,title='Pair',bty='o',cex=.9,box.col='#00000055') #,pch=21
         legend(1.5,convertLineToUser(1.5,1),sprintf('%s',pairNames[names(cols)]),lwd=2,col=cols2,pt.cex=.4,pt.bg=cols2,ncol=2,inset=-.02,title='Pair',bty='o',cex=.7,xpd=NA,yjust=1,xjust=.5) #,pch=21
         #legend('bottomright',sprintf('%s ',names(cols)),lwd=2,col=cols,pt.cex=.4,pt.bg=cols2,ncol=2,x.intersp=.2,inset=.02,title='Pair',bty='o',cex=.9,box.col='#00000055') #,pch=21
-      dev.off()
-      pdf(sprintf('out/pair/box_%s.pdf',var),width=7,height=4)
-       par(las=2,mar=c(6,4,.1,.1))
-       boxplot(thisData[,var]~paste(thisData$Pair.ID..,thisData$Donor.or.Recipient),ylab=selectVars[var],log='y',col=unlist(lapply(nRecs,function(x)rep(c('red','blue'),c(1,x)))))
       dev.off()
     }
   }
