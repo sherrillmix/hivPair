@@ -24,6 +24,8 @@ recs<-with(hiv[!hiv$donor,],tapply(baseName,Pair.ID..,unique))
 pairNames<-mapply(function(x,y)paste(paste(x,collapse='/'),paste(y,collapse='/'),sep='-'),donors,recs)
 write.fa(hiv$seqId,hiv$seq,'hiv.fa')
 
+hiv$meanIfna<-(hiv$IFNa2.SD.IC50..U.ml.+hiv$IFNa2.PD.IC50..U.ml.)/2
+
 #calculate scaled replicative capacity
 hiv[hiv$select=='UT','maxSD']<-ave(hiv[hiv$select=='UT','Replicative.capacity.Single.Donor.p24.d7'], hiv[hiv$select=='UT','Pair.ID..'], FUN=max)
 hiv[hiv$select=='UT','maxPD']<-ave(hiv[hiv$select=='UT','Replicative.capacity.Pool.Donor.p24.d7'], hiv[hiv$select=='UT','Pair.ID..'], FUN=max)
