@@ -81,33 +81,6 @@ par(mar=c(4,4,1,6))
 plotAA(apply(aaMat,1,paste,collapse=''),groups=paste(hiv$Pair.ID..,hiv$donor))
 dev.off()
 
-
-var<-read.csv('data/varLoops.csv',header=TRUE,check.names=FALSE)
-colnames(var)<-sprintf('CH%s',colnames(var))
-if(any(!colnames(var) %in% c(unlist(recs),unlist(donors))))stop(simpleError('Unknown donor/recipient'))
-if(any(!c(unlist(recs),unlist(donors)) %in% colnames(var)))stop(simpleError('Missing donor/recipient'))
-
-donorLengths<-lapply(donors,function(x)var[!is.na(var[,x]),x])
-recLengths<-lapply(recs,function(x)lapply(x,function(y)var[!is.na(var[,y]),y]))
-recLengths<-lapply(recLengths,function(xx)sapply(xx,function(yy){
-  lengthTab<-table(yy)
-  maxLength<-names(lengthTab)[which.max(lengthTab)]
-  if(any(lengthTab[maxLength]/sum(lengthTab)<.75))stop(simpleError('Unclear recipient length'))
-  return(as.numeric(maxLength))
-}))
-
-glyco<-read.csv('data/glyco.csv',header=TRUE,check.names=FALSE)
-colnames(glyco)<-sprintf('CH%s',colnames(glyco))
-if(any(!colnames(glyco) %in% c(unlist(recs),unlist(donors))))stop(simpleError('Unknown donor/recipient'))
-if(any(!c(unlist(recs),unlist(donors)) %in% colnames(glyco)))stop(simpleError('Missing donor/recipient'))
-
-donorGlyco<-lapply(donors,function(x)glyco[!is.na(glyco[,x]),x])
-recGlyco<-lapply(recs,function(x)lapply(x,function(y)glyco[!is.na(glyco[,y]),y]))
-recGlyco<-lapply(recGlyco,function(xx)sapply(xx,function(yy){
-  lengthTab<-table(yy)
-  maxLength<-names(lengthTab)[which.max(lengthTab)]
-  if(any(lengthTab[maxLength]/sum(lengthTab)<.5))stop(simpleError('Unclear recipient length'))
-  return(as.numeric(maxLength))
-}))
+source('readVarGlyco.R')
 
 

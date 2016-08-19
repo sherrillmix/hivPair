@@ -2,8 +2,8 @@ if(!exists('hiv'))source('readData.R')
 
 donorMedians<-sapply(donorLengths,median)
 lessMedianP<-sapply(donorLengths,function(x)mean(x<median(x)))
-recLess<-unlist(recLengths)<rep(donorMedians,sapply(recLengths,length))
-lessPs<-rep(lessMedianP,sapply(recLengths,length))
+recLess<-unlist(recLength)<rep(donorMedians,sapply(recLength,length))
+lessPs<-rep(lessMedianP,sapply(recLength,length))
 
 possibleObs<-do.call(expand.grid,rep(list(c(TRUE,FALSE)),length(lessPs)))
 nLess<-apply(possibleObs,1,sum)
