@@ -79,7 +79,8 @@ selectVars<-c(
   'Infectivity.RLU.pg.RT...T1249.'='Infectivity (RLU/pg RT)',
   'Replicative.capacity.Pool.Donor.p24.d7'='Pooled donor\nReplicative capacity (day 7 p24)',
   'meanRepCap'='Mean replicative capacity\n(proportion of maximum day 7 p24)',
-  'meanIfna'='IFNa2 IC50 (U/ml)'
+  'meanIfna'='IFNa2 IC50 (U/ml)',
+  'IFNbeta.PD.IC50..ng.ml.'='IFNbeta IC50 (ng/ml)'
 )
 nonLog<-'meanRepCap'
   #'IFNa2.PD.IC50..U.ml.'='Pooled donor\nIFNa2 IC50 (U/ml)',
