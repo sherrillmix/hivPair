@@ -8,6 +8,7 @@ library(parallel)
 #library(beeswarm)
 
 hiv<-read.csv('data/data.csv',stringsAsFactors=FALSE)
+hiv<-hiv[hiv$Renamed!='',]
 hiv<-hiv[,apply(hiv,2,function(x)!all(is.na(x)))]
 hiv$seq<-toupper(gsub('[ \n]','',hiv$Sequence))
 hiv$select<-sapply(strsplit(hiv$Renamed,'\\.'),'[',4)
@@ -24,19 +25,19 @@ recs<-with(hiv[!hiv$donor,],tapply(baseName,Pair.ID..,unique))
 pairNames<-mapply(function(x,y)paste(paste(x,collapse='/'),paste(y,collapse='/'),sep='-'),donors,recs)
 write.fa(hiv$seqId,hiv$seq,'hiv.fa')
 
-hiv$meanIfna<-(hiv$IFNa2.SD.IC50..U.ml.+hiv$IFNa2.PD.IC50..U.ml.)/2
+hiv$meanIfna<-(hiv$IFNa2.Single.Donor.cells.IC50..pg..ml.+hiv$IFNa2.Pooled.Donor.cells.IC50..pg..ml.)/2
 
 #calculate scaled replicative capacity
-hiv[hiv$select=='UT','maxSD']<-ave(hiv[hiv$select=='UT','Replicative.capacity.Single.Donor.p24.d7'], hiv[hiv$select=='UT','Pair.ID..'], FUN=max)
-hiv[hiv$select=='UT','maxPD']<-ave(hiv[hiv$select=='UT','Replicative.capacity.Pool.Donor.p24.d7'], hiv[hiv$select=='UT','Pair.ID..'], FUN=max)
+hiv[hiv$select=='UT','maxSD']<-ave(hiv[hiv$select=='UT','Replicative.capacity.Single.Donor.cells.p24.d7'], hiv[hiv$select=='UT','Pair.ID..'], FUN=max)
+hiv[hiv$select=='UT','maxPD']<-ave(hiv[hiv$select=='UT','Replicative.capacity.Pooled.Donor.cells.p24.d7'], hiv[hiv$select=='UT','Pair.ID..'], FUN=max)
 #fill in the treated ones
 hiv$maxSD<-ave(hiv$maxSD,hiv$Pair.ID..,FUN=function(x)max(x,na.rm=TRUE))
 hiv$maxPD<-ave(hiv$maxPD,hiv$Pair.ID..,FUN=function(x)max(x,na.rm=TRUE))
-hiv$propSD<-hiv$Replicative.capacity.Single.Donor.p24.d7/hiv$maxSD
-hiv$propPD<-hiv$Replicative.capacity.Pool.Donor.p24.d7/hiv$maxPD
+hiv$propSD<-hiv$Replicative.capacity.Single.Donor.cells.p24.d7/hiv$maxSD
+hiv$propPD<-hiv$Replicative.capacity.Pooled.Donor.cells.p24.d7/hiv$maxPD
 #take mean of pooled and single
 hiv$meanRepCap<-(hiv$propSD+hiv$propPD)/2
-write.csv(hiv[,c('Renamed','Original.name','Pair.ID..','select','Replicative.capacity.Single.Donor.p24.d7','Replicative.capacity.Pool.Donor.p24.d7','maxSD','maxPD','propSD','propPD','meanRepCap')],'out/repCap.csv')
+write.csv(hiv[,c('Renamed','Original.name','Pair.ID..','select','Replicative.capacity.Single.Donor.cells.p24.d7','Replicative.capacity.Pooled.Donor.cells.p24.d7','maxSD','maxPD','propSD','propPD','meanRepCap')],'out/repCap.csv')
 
 
 refName<-'B.FR.83.HXB2_LAI_IIIB_BRU_K03455'

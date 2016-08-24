@@ -2,11 +2,11 @@ if(!exists('hiv'))source('readData.R')
 
 
 
-varCols<-which(colnames(hiv)=='Replicative.capacity.Single.Donor.p24.d7'):which(colnames(hiv)=='Bnaber.IC50')
-pdf('out/pairs.pdf',width=12,height=12)
+varCols<-which(colnames(hiv)=='Replicative.capacity.Single.Donor.cells.p24.d7'):which(colnames(hiv)=='Autologous.IC50.Run.2')
+pdf('out/pairs.pdf',width=20,height=20)
 thisData<-hiv[,varCols]
 colnames(thisData)<-gsub('\\.+','\n',colnames(thisData))
-plot(thisData,col='#00000077',pch='.',cex=2.5)
+plot(thisData,col='#00000077',pch='.',cex=2.5,cex.labels=.7)
 dev.off()
 
 #align<-levenAlign(hiv$seq,hiv$seq[1])
@@ -77,15 +77,16 @@ dev.off()
 selectVars<-c(
   'Env.RT'='Env/RT',
   'Infectivity.RLU.pg.RT...T1249.'='Infectivity (RLU/pg RT)',
-  'Replicative.capacity.Pool.Donor.p24.d7'='Pooled donor\nReplicative capacity (day 7 p24)',
+  'Replicative.capacity.Pooled.Donor.cells.p24.d7'='Pooled donor\nReplicative capacity (day 7 p24)',
   'meanRepCap'='Mean replicative capacity\n(proportion of maximum day 7 p24)',
-  'meanIfna'='IFNa2 IC50 (U/ml)',
-  'IFNbeta.PD.IC50..ng.ml.'='IFNbeta IC50 (ng/ml)'
+  'meanIfna'='IFNa2 IC50 (pg/ml)',
+  'IFNbeta.Pooled.Donor.cells.IC50..pg.ml.'='IFNbeta IC50 (pg/ml)'
 )
 nonLog<-'meanRepCap'
   #'IFNa2.PD.IC50..U.ml.'='Pooled donor\nIFNa2 IC50 (U/ml)',
   #'Replicative.capacity.Single.Donor.p24.d7'='Single donor\nReplicative capactity\n(day 7 p24)',
   #'IFNa2.SD.IC50..U.ml.'='Single donor\nIFNa2 IC50 (U/ml)',
+if(any(!names(selectVars) %in% colnames(hiv)))stop(simpleError('Unknown columns in selectVars'))
 
 logAxis<-function(x,axisNum=2,addExtra=TRUE,spreadRange=1.3,...){
   minX<-min(log10(x),na.rm=TRUE) 
