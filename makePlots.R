@@ -130,6 +130,7 @@ dev.off()
 
 
 
+#make pair plots
 for(fluid in list('PL',unique(hiv$fluid))){
   for(plotType in c('box','points')){
     for(var in names(selectVars)){
@@ -212,3 +213,36 @@ for(fluid in list('PL',unique(hiv$fluid))){
   }
 }
 
+
+#make individual interferon selection plots
+selectPos<-c('UT'=-.15,'A2'=.1,'BE'=.3)
+selectCol<-rainbow.lab(3)
+#selectCol2<-rainbow.lab(3,alpha=.6)
+names(selectCol)<-names(selectCol2)<-names(selectPos)
+for(var in names(selectVars)){
+  ylim<-range(hiv[hiv$fluid=='PL',var],na.rm=TRUE)
+  pdf(sprintf('out/interferon_%s.pdf',var),height=10,width=8)
+  par(mfrow=c(ceiling(length(unique(hiv$Pair.ID..))/2),2))
+  for(pair in sort(unique(hiv$Pair.ID..))){
+    thisData<-hiv[hiv$fluid=='PL'&hiv$Pair.ID..==pair&!is.na(hiv[,var]),]
+    patients<-unique(thisData$baseName)
+    patients<-patients[order(!patients %in% thisData$patients[thisData$donor],patients)]
+    patientPos<-1:length(patients)
+    names(patientPos)<-patients
+    isLog<-!var %in% nonLog
+    #vpPlot(groupings,thisData[,var],las=2,ylim=ylim)
+    plot(1,1,las=2,type='n',ylim=ylim,xlim=range(patientPos)+c(-.35,.5),ylab=selectVars[var],xlab='',xaxt='n',log=ifelse(isLog,'y',''),las=1,mgp=c(3,.7,0),yaxt='n')
+    minMaxs<-lapply(patients,function(pat)do.call(rbind,tapply(thisData[thisData$baseName==pat,var],thisData[thisData$baseName==pat,'select'],range)))
+    boxs<-lapply(patients,function(pat)do.call(rbind,tapply(thisData[thisData$baseName==pat,var],thisData[thisData$baseName==pat,'select'],function(x)boxplot(x,plot=FALSE)$stats[c(2,4),1])))
+    medians<-lapply(patients,function(pat)tapply(thisData[thisData$baseName==pat,var],thisData[thisData$baseName==pat,'select'],median))
+    names(medians)<-names(boxs)<-names(minMaxs)<-patients
+    xPos<-patientPos[rep(names(medians),sapply(medians,length))] + selectPos[unlist(lapply(medians,names))]
+    segments(xPos,unlist(lapply(minMaxs,'[',,1)),xPos,unlist(lapply(minMaxs,'[',,2)),col=selectCol[unlist(lapply(minMaxs,rownames))])
+    rect(xPos-.1,unlist(lapply(boxs,'[',,1)),xPos+.1,unlist(lapply(boxs,'[',,2)),col=selectCol2[unlist(lapply(boxs,rownames))])
+    segments(xPos-.1,unlist(medians),xPos+.1,unlist(medians))#,col=selectCol[unlist(lapply(medians,names))],lwd=2)
+    axis(1,patientPos,names(patientPos),las=2)
+    if(isLog)logAxis(ylim,mgp=c(3,.8,0),addExtra=FALSE)
+    else axis(2,pretty(0:1),las=1,mgp=c(3,.5,0),tcl=-.35)
+  }
+  dev.off()
+}
