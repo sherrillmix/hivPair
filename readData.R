@@ -25,6 +25,8 @@ recs<-with(hiv[!hiv$donor,],tapply(baseName,Pair.ID..,unique))
 pairNames<-mapply(function(x,y)paste(paste(x,collapse='/'),paste(y,collapse='/'),sep='-'),donors,recs)
 write.fa(hiv$seqId,hiv$seq,'hiv.fa')
 
+#deal with column name case inconsistency
+colnames(hiv)<-sub('\\.donor\\.','.Donor.',colnames(hiv))
 hiv$meanIfna<-(hiv$IFNa2.Single.Donor.cells.IC50..pg..ml.+hiv$IFNa2.Pooled.Donor.cells.IC50..pg..ml.)/2
 
 #calculate scaled replicative capacity
