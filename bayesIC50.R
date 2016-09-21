@@ -43,7 +43,7 @@ stanCode<-"
   transformed parameters{
     real indivMu[N];
     for (ii in 1:N){
-      indivMu[ii] = mus[pair[ii]]+recipient[pair[ii]]*isRecipient[ii]+clade*isCladeB[ii];
+      indivMu[ii] = mus[pair[ii]]+recipient[pair[ii]]*isRecipient[ii]+isRecipient[ii]*clade*isCladeB[ii];
       if(isGenital[ii])indivMu[ii]=indivMu[ii]+genitals[pair[ii]];
     }
   }
