@@ -90,7 +90,7 @@ colnames(sims)<-dimnames(as.array(fit))[[3]]
 
 indivRecipBeta<-sims[,grep('recipient\\[[0-9]\\]',colnames(sims))]
 metaBeta<-sims[,'metaRecipientMu']
-indivGenital<-sims[,grep('genital\\[[0-9]\\]',colnames(sims))]
+indivGenital<-sims[,grep('genitals\\[[0-9]\\]',colnames(sims))]
 metaGenital<-sims[,'metaGenitalMu']
 cladeBeta<-sims[,'clade']
 
@@ -113,14 +113,14 @@ pdf('out/bayes.pdf')
   meanBin<-(bins[-length(bins)]+bins[-1])/2
   apply(indivTabs,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#0000FF11'))
   apply(indivGenitalTabs,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#FF000011'))
-  polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,cladeTabs,0,0),col='#FF000044')
+  polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,cladeTabs,0,0),col='#00FF0044')
   abline(v=1,lty=2)
   logAxis(1)
   plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log="x",main='Population')
   title(xlab='Fold increase',mgp=c(2,1,0))
   polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,metaTabs,0,0),col='#0000FF44')
   polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,genitalTabs,0,0),col='#FF000044')
-  polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,cladeTabs,0,0),col='#FF000044')
+  polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,cladeTabs,0,0),col='#00FF0044')
   abline(v=1,lty=2)
   logAxis(1)
 dev.off()
