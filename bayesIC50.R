@@ -1,12 +1,10 @@
 library('rstan')
 
 #for parallel
+nThreads<-40
 if(parallel::detectCores()>10){
   rstan_options(auto_write = TRUE)
   options(mc.cores = parallel::detectCores())
-  nThreads=20
-}else{
-  nThreads=4
 }
 
 if(!exists('hiv'))source('readData.R')
@@ -78,10 +76,10 @@ dat<-withAs('xx'=hiv[hiv$select=='UT',],list(
   nGroupTypes=length(unique(groupTypes)),
   groupTypes=as.numeric(as.factor(groupTypes))
 ))
-fit <- stan(model_code = stanCode, data = dat, iter=10000, chains=nThreads)
+fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=30000, chains=nThreads)
 
 allPars<-c("metaMuMu", "metaMuSd", "metaRecipientMu", "metaRecipientSd", "metaGenitalMu", "metaGenitalSd", "mus", "sigmas", "metaSigmaSd", "metaSigmaMu", "genitals", "recipient", "clade")
-pdf('test.pdf',width=20,height=20)
+pdf('out/bayesFit.pdf',width=20,height=20)
   print(plot(fit,pars=allPars))
   print(traceplot(fit,pars=allPars))
 dev.off()
@@ -92,6 +90,9 @@ colnames(sims)<-dimnames(as.array(fit))[[3]]
 
 indivRecipBeta<-sims[,grep('recipient\\[[0-9]\\]',colnames(sims))]
 metaBeta<-sims[,'metaRecipientMu']
+indivGenital<-sims[,grep('genital\\[[0-9]\\]',colnames(sims))]
+metaGenital<-sims[,'metaGenitalMu']
+cladeBeta<-sims[,'clade']
 
 
 xlim<-c(-.1,1.2)
@@ -99,17 +100,29 @@ xlim<-c(-.1,1.2)
 bins<-seq(xlim[1],xlim[2],.01)
 indivTabs<-apply(indivRecipBeta,2,function(x)table(cut(x,bins))/length(x))
 metaTabs<-table(cut(metaBeta,bins))/length(metaBeta)
+indivGenitalTabs<-apply(indivGenital,2,function(x)table(cut(x,bins))/length(x))
+genitalTabs<-table(cut(metaGenital,bins))/length(metaGenital)
+cladeTabs<-table(cut(cladeBeta,bins))/length(cladeBeta)
 
-pdf('test.pdf')
-  par(las=1,mar=c(4,3.6,1.1,.1))
-  plot(1,1,type='n',xlim=xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0))
+pdf('out/bayes.pdf')
+  par(mfrow=c(2,1),las=1,mar=c(4,3.6,1.1,.1))
+  plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log='x',main='Individuals')
   #axis(1,prettyLabels,sapply(prettyLabels,function(x)as.expression(bquote(2^.(x)))),las=1)
   #axis(1,log2(10^prettyLabels),ifelse(prettyLabels==0,1,sapply(prettyLabels,function(x)as.expression(bquote(10^.(x))))),las=1)
-  #title(xlab='Fold increase in DNA over air swabs',mgp=c(2,1,0))
+  title(xlab='Fold increase',mgp=c(2,1,0))
   meanBin<-(bins[-length(bins)]+bins[-1])/2
-  apply(indivTabs,2,function(xx)polygon(c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#0000FF11'))
-  polygon(c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,metaTabs,0,0),col='#FF000044')
-  abline(v=0,lty=2)
+  apply(indivTabs,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#0000FF11'))
+  apply(indivGenitalTabs,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#FF000011'))
+  polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,cladeTabs,0,0),col='#FF000044')
+  abline(v=1,lty=2)
+  logAxis(1)
+  plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log="x",main='Population')
+  title(xlab='Fold increase',mgp=c(2,1,0))
+  polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,metaTabs,0,0),col='#0000FF44')
+  polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,genitalTabs,0,0),col='#FF000044')
+  polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,cladeTabs,0,0),col='#FF000044')
+  abline(v=1,lty=2)
+  logAxis(1)
 dev.off()
 
 
