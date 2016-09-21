@@ -24,6 +24,7 @@ donors<-with(hiv[hiv$donor,],tapply(baseName,Pair.ID..,unique))
 recs<-with(hiv[!hiv$donor,],tapply(baseName,Pair.ID..,unique))
 pairNames<-mapply(function(x,y)paste(paste(x,collapse='/'),paste(y,collapse='/'),sep='-'),donors,recs)
 write.fa(hiv$seqId,hiv$seq,'hiv.fa')
+hiv$group<-as.numeric(as.factor(hiv$sampleFluid))
 
 #deal with column name case inconsistency
 colnames(hiv)<-sub('\\.donor\\.','.Donor.',colnames(hiv))
