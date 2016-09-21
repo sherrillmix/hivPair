@@ -34,7 +34,17 @@ stanCode<-"
   }
 "
 
-dat<-list(ic50=log10(hiv[,targetCol]),N=nrow(hiv),isCladeB=as.integer(hiv$Subtype=='B'),isGenital=as.integer(hiv$fluid=='PL'),isRecipient=as.integer(!hiv$donor),nGroup=max(hiv$group),group=hiv$group,pair=hiv$Pair.ID..,nPair=max(hiv$Pair.ID..))
+dat<-list(
+  ic50=log10(hiv[,targetCol]),
+  N=nrow(hiv),
+  isCladeB=as.integer(hiv$Subtype=='B'),
+  isGenital=as.integer(hiv$fluid=='PL'),
+  isRecipient=as.integer(!hiv$donor),
+  nGroup=max(hiv$group),
+  group=hiv$group,
+  pair=hiv$Pair.ID..,
+  nPair=max(hiv$Pair.ID..)
+)
 fit <- stan(model_code = stanCode, data = dat, iter=1000, chains=4)
 
 
