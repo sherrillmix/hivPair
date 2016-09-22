@@ -79,6 +79,7 @@ fits<-lapply(targetCols,function(targetCol){
     groupTypes=as.numeric(as.factor(groupTypes))
   ))
   fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=30000, chains=nThreads,thin=20)
+  return(fit)
 })
 names(fits)<-targetCols
 
@@ -115,8 +116,8 @@ for(targetCol in targetCols){
     #axis(1,log2(10^prettyLabels),ifelse(prettyLabels==0,1,sapply(prettyLabels,function(x)as.expression(bquote(10^.(x))))),las=1)
     title(xlab='Fold increase',mgp=c(1.5,1,0))
     meanBin<-(bins[-length(bins)]+bins[-1])/2
-    apply(indivTabs,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#0000FF11',border='#0000FF99'))
-    apply(indivGenitalTabs,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#FF000011',border='#FF000099'))
+    apply(indivTabs,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#0000FF11',border='#0000FF44'))
+    apply(indivGenitalTabs,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#FF000011',border='#FF000044'))
     polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,cladeTabs,0,0),col='#00FF0044',border='#00FF0099')
     abline(v=1,lty=2)
     logAxis(1)
@@ -129,7 +130,6 @@ for(targetCol in targetCols){
     legend('top',c('Recipient','Clade B','Genital'),fill=c('#0000FF44','#00FF0044','#FF000044'),border=c('#0000FF99','#00FF0099','#FF000099'),inset=.02)
     logAxis(1)
   dev.off()
-
 }
 
 
