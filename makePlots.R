@@ -80,7 +80,8 @@ selectVars<-c(
   'Replicative.capacity.Pooled.Donor.cells.p24.d7'='Pooled donor\nReplicative capacity (day 7 p24)',
   'meanRepCap'='Mean replicative capacity\n(proportion of maximum day 7 p24)',
   'meanIfna'='IFNa2 IC50 (pg/ml)',
-  'IFNbeta.Pooled.Donor.cells.IC50..pg.ml.'='IFNbeta IC50 (pg/ml)'
+  'IFNbeta.Pooled.Donor.cells.IC50..pg.ml.'='IFNbeta IC50 (pg/ml)',
+  'IFNa2.Pooled.Donor.cells.IC50..pg..ml.'='IFNa2 IC50 (pg/ml)'
 )
 nonLog<-'meanRepCap'
   #'IFNa2.PD.IC50..U.ml.'='Pooled donor\nIFNa2 IC50 (U/ml)',
@@ -218,7 +219,8 @@ for(fluid in list('PL',unique(hiv$fluid))){
 selectPos<-c('UT'=-.15,'A2'=.1,'BE'=.3)
 selectCol<-rainbow.lab(3)
 #selectCol2<-rainbow.lab(3,alpha=.6)
-names(selectCol)<-names(selectCol2)<-names(selectPos)
+#names(selectCol)<-names(selectCol2)<-names(selectPos)
+names(selectCol)<-names(selectPos)
 for(var in names(selectVars)){
   ylim<-range(hiv[hiv$fluid=='PL',var],na.rm=TRUE)
   pdf(sprintf('out/interferon_%s.pdf',var),height=10,width=8)
@@ -238,7 +240,7 @@ for(var in names(selectVars)){
     names(medians)<-names(boxs)<-names(minMaxs)<-patients
     xPos<-patientPos[rep(names(medians),sapply(medians,length))] + selectPos[unlist(lapply(medians,names))]
     segments(xPos,unlist(lapply(minMaxs,'[',,1)),xPos,unlist(lapply(minMaxs,'[',,2)),col=selectCol[unlist(lapply(minMaxs,rownames))])
-    rect(xPos-.1,unlist(lapply(boxs,'[',,1)),xPos+.1,unlist(lapply(boxs,'[',,2)),col=selectCol2[unlist(lapply(boxs,rownames))])
+    rect(xPos-.1,unlist(lapply(boxs,'[',,1)),xPos+.1,unlist(lapply(boxs,'[',,2)),col=selectCol[unlist(lapply(boxs,rownames))])
     segments(xPos-.1,unlist(medians),xPos+.1,unlist(medians))#,col=selectCol[unlist(lapply(medians,names))],lwd=2)
     axis(1,patientPos,names(patientPos),las=2)
     if(isLog)logAxis(ylim,mgp=c(3,.8,0),addExtra=FALSE)
