@@ -70,10 +70,9 @@ targetCols<-c('IFNa2.Pooled.Donor.cells.IC50..pg..ml.','IFNbeta.Pooled.Donor.cel
 fits<-lapply(targetCols,function(targetCol){
   groupTypes<-sapply(1:max(hiv$group),function(zz)paste(ifelse(hiv[hiv$group==zz,'fluid'][1]=='PL','PL','GE'),ifelse(hiv[hiv$group==zz,'donor'][1],'Don','Rec')))
   cladeBs<-unique(hiv$Pair.ID..[hiv$Subtype=='B'])
-  cladeBs<-structure(1:length(cladeBs),.Names=cladeBs)
-  cladeBId<-cladeBs[as.character(hiv$Pair.ID..)]
-  cladeBId[is.na(cladeBId)]<-99999 #magic number
-  names(cladeBId)<-NULL
+  notCladeBs<-unique(hiv$Pair.ID..[hiv$Subtype!='B'])
+  #note 99999 is a arbitrarily high number for non clade Bs (should never be called within Stan due to if(cladeB))
+  cladeBIds<-structure(c(1:length(cladeBs),rep(99999,length(notCladeBs))),.Names=c(cladeBs,notCladeBs))
   dat<-withAs('xx'=hiv[hiv$select=='UT'&!is.na(hiv[,targetCol]),],list(
     ic50=log10(xx[,targetCol]),
     N=nrow(xx),
@@ -87,8 +86,8 @@ fits<-lapply(targetCols,function(targetCol){
     nPair=max(xx$Pair.ID..),
     nGroupTypes=length(unique(groupTypes)),
     groupTypes=as.numeric(as.factor(groupTypes)),
-    nCladeB<-length(cladeBs),
-    cladeBId=cladeBId
+    nCladeB=length(cladeBs),
+    cladeBId=cladeBIds[as.character(xx$Pair.ID..)]
   ))
   fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=30000, chains=nThreads,thin=20)
   return(fit)
