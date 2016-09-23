@@ -28,41 +28,36 @@ stanCode<-"
     int<lower=1> cladeBId[N];
   }
   parameters {
-    real metaMuMu;
-    real<lower=0.0000001> metaMuSd;
+    real metaDonorMu;
+    real<lower=0.0000001> metaDonorSd;
     real metaRecipientMu;
     real<lower=0.0000001> metaRecipientSd;
     real metaGenitalMu;
     real<lower=0.0000001> metaGenitalSd;
     real metaCladeMu;
     real<lower=0.0000001> metaCladeSd;
-    real mus[nPair];
+    real donors[nPair];
     real<lower=0.0000001> sigmas[nGroup];
     real<lower=0.0000001> metaSigmaSd[nGroupTypes];
     real metaSigmaMu[nGroupTypes];
     real genitals[nGenital];
-    real recipient[nPair];
+    real recipients[nPair];
     real clade[nCladeB];
   }
   transformed parameters{
     real indivMu[N];
     for (ii in 1:N){
-      indivMu[ii] = mus[pair[ii]]+recipient[pair[ii]]*isRecipient[ii];
+      indivMu[ii] = donors[pair[ii]]+recipients[pair[ii]]*isRecipient[ii];
       if(isGenital[ii])indivMu[ii]=indivMu[ii]+genitals[pair[ii]];
       if(isCladeB[ii])indivMu[ii]=indivMu[ii]+isRecipient[ii]*clade[cladeBId[ii]];
     }
   }
   model {
-    mus ~ normal(metaMuMu,metaMuSd);
-    recipient ~ normal(metaRecipientMu,metaRecipientSd);
+    donors ~ normal(metaDonorMu,metaDonorSd);
+    recipients ~ normal(metaRecipientMu,metaRecipientSd);
     genitals ~ normal(metaGenitalMu,metaGenitalSd);
-    for(ii in 1:nGroup)sigmas[ii]~normal(metaSigmaMu[groupTypes[ii]],metaSigmaSd[groupTypes[ii]]);
-    for (ii in 1:N){
-      ic50[ii]~normal(
-        indivMu[ii],
-        sigmas[group[ii]]
-      );
-    }
+    for(ii in 1:nGroup)sigmas[ii] ~ normal(metaSigmaMu[groupTypes[ii]],metaSigmaSd[groupTypes[ii]]);
+    for (ii in 1:N)ic50[ii] ~ normal(indivMu[ii],sigmas[group[ii]]);
   }
 "
 
@@ -96,7 +91,7 @@ names(fits)<-targetCols
 
 for(targetCol in targetCols){
   fit<-fits[[targetCol]]
-  allPars<-c("metaMuMu", "metaMuSd", "metaRecipientMu", "metaRecipientSd", "metaGenitalMu", "metaGenitalSd","metaCladeMu","metaCladeSd","mus", "sigmas", "metaSigmaSd", "metaSigmaMu", "genitals", "recipient", "clade")
+  allPars<-c("metaDonorMu", "metaDonorSd", "metaRecipientMu", "metaRecipientSd", "metaGenitalMu", "metaGenitalSd","metaCladeMu","metaCladeSd","donors", "sigmas", "metaSigmaSd", "metaSigmaMu", "genitals", "recipients", "clade")
   pdf(sprintf('out/bayesFit%s.pdf',targetCol),width=20,height=20)
     print(plot(fit,pars=allPars))
     print(traceplot(fit,pars=allPars))
@@ -106,7 +101,7 @@ for(targetCol in targetCols){
   dim(sims)<-c(prod(dim(sims)[c(1,2)]),dim(sims)[3])
   colnames(sims)<-dimnames(as.array(fit))[[3]]
   #
-  indivRecipBeta<-sims[,grep('recipient\\[[0-9]\\]',colnames(sims))]
+  indivRecipBeta<-sims[,grep('recipients\\[[0-9]\\]',colnames(sims))]
   metaBeta<-sims[,'metaRecipientMu']
   indivGenital<-sims[,grep('genitals\\[[0-9]\\]',colnames(sims))]
   metaGenital<-sims[,'metaGenitalMu']
