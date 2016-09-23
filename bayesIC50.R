@@ -42,20 +42,21 @@ stanCode<-"
     real metaSigmaMu[nGroupTypes];
     real genitals[nGenital];
     real recipients[nPair];
-    real clade[nCladeB];
+    real clades[nCladeB];
   }
   transformed parameters{
     real indivMu[N];
     for (ii in 1:N){
       indivMu[ii] = donors[pair[ii]]+recipients[pair[ii]]*isRecipient[ii];
       if(isGenital[ii])indivMu[ii]=indivMu[ii]+genitals[pair[ii]];
-      if(isCladeB[ii])indivMu[ii]=indivMu[ii]+isRecipient[ii]*clade[cladeBId[ii]];
+      if(isCladeB[ii])indivMu[ii]=indivMu[ii]+isRecipient[ii]*clades[cladeBId[ii]];
     }
   }
   model {
     donors ~ normal(metaDonorMu,metaDonorSd);
     recipients ~ normal(metaRecipientMu,metaRecipientSd);
     genitals ~ normal(metaGenitalMu,metaGenitalSd);
+    clades ~ normal(metaCladeMu,metaCladeSd);
     for(ii in 1:nGroup)sigmas[ii] ~ normal(metaSigmaMu[groupTypes[ii]],metaSigmaSd[groupTypes[ii]]);
     for (ii in 1:N)ic50[ii] ~ normal(indivMu[ii],sigmas[group[ii]]);
   }
@@ -92,14 +93,14 @@ fits<-lapply(names(targetCols),function(targetCol){
     nCladeB=length(cladeBs),
     cladeBId=cladeBIds[as.character(xx$Pair.ID..)]
   ))
-  fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=50000, chains=nThreads,thin=20)
+  fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=50000, chains=nThreads,thin=25)
   return(fit)
 })
 names(fits)<-names(targetCols)
 
 for(targetCol in names(targetCols)){
   fit<-fits[[targetCol]]
-  allPars<-c("metaDonorMu", "metaDonorSd", "metaRecipientMu", "metaRecipientSd", "metaGenitalMu", "metaGenitalSd","metaCladeMu","metaCladeSd","donors", "sigmas", "metaSigmaSd", "metaSigmaMu", "genitals", "recipients", "clade")
+  allPars<-c("metaDonorMu", "metaDonorSd", "metaRecipientMu", "metaRecipientSd", "metaGenitalMu", "metaGenitalSd","metaCladeMu","metaCladeSd","donors", "sigmas", "metaSigmaSd", "metaSigmaMu", "genitals", "recipients", "clades")
   pdf(sprintf('out/bayes/bayesFit%s.pdf',targetCol),width=20,height=20)
     print(plot(fit,pars=allPars))
     print(traceplot(fit,pars=allPars))
@@ -113,7 +114,7 @@ for(targetCol in names(targetCols)){
   metaBeta<-sims[,'metaRecipientMu']
   indivGenital<-sims[,grep('genitals\\[[0-9]\\]',colnames(sims))]
   metaGenital<-sims[,'metaGenitalMu']
-  indivClade<-sims[,grep('clade\\[[0-9]\\]',colnames(sims))]
+  indivClade<-sims[,grep('clades\\[[0-9]\\]',colnames(sims))]
   metaClade<-sims[,'metaCladeMu']
   xlim<-c(-.7,2.3)
   #
@@ -144,6 +145,7 @@ for(targetCol in names(targetCols)){
     legend('topleft',c('Recipient','Clade B','Genital'),fill=c('#0000FF44','#00FF0044','#FF000044'),border=c('#0000FF99','#00FF0099','#FF000099'),inset=.02)
     logAxis(1)
   dev.off()
+
 }
 
 
