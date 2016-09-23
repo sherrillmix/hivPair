@@ -61,7 +61,15 @@ stanCode<-"
   }
 "
 
-targetCols<-c('IFNa2.Pooled.Donor.cells.IC50..pg..ml.','IFNbeta.Pooled.Donor.cells.IC50..pg.ml.','Env.RT')
+targetCols<-c(
+  'Env.RT'='Env/RT',
+  'Infectivity.RLU.pg.RT...T1249.'='Infectivity (RLU/pg RT)',
+  'Replicative.capacity.Pooled.Donor.cells.p24.d7'='Pooled donor\nReplicative capacity (day 7 p24)',
+  'meanRepCap'='Mean replicative capacity\n(proportion of maximum day 7 p24)',
+  'meanIfna'='IFNa2 IC50 (pg/ml)',
+  'IFNbeta.Pooled.Donor.cells.IC50..pg.ml.'='IFNbeta IC50 (pg/ml)',
+  'IFNa2.Pooled.Donor.cells.IC50..pg..ml.'='IFNa2 IC50 (pg/ml)'
+)
 fits<-lapply(targetCols,function(targetCol){
   groupTypes<-sapply(1:max(hiv$group),function(zz)paste(ifelse(hiv[hiv$group==zz,'fluid'][1]=='PL','PL','GE'),ifelse(hiv[hiv$group==zz,'donor'][1],'Don','Rec')))
   cladeBs<-unique(hiv$Pair.ID..[hiv$Subtype=='B'])
@@ -119,7 +127,7 @@ for(targetCol in targetCols){
   #
   pdf(sprintf('out/bayes%s.pdf',targetCol))
     par(mfrow=c(2,1),las=1,mar=c(4,3.6,1.1,.1))
-    plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log='x',main='Individuals',xaxs='i',main=targetCol)
+    plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log='x',main='Individuals',xaxs='i',main=names(targetCols)[targetCols==targetCol])
     #axis(1,prettyLabels,sapply(prettyLabels,function(x)as.expression(bquote(2^.(x)))),las=1)
     #axis(1,log2(10^prettyLabels),ifelse(prettyLabels==0,1,sapply(prettyLabels,function(x)as.expression(bquote(10^.(x))))),las=1)
     title(xlab='Fold increase',mgp=c(1.5,1,0))
