@@ -127,25 +127,24 @@ for(targetCol in names(targetCols)){
   cladeTabs<-table(cut(metaClade,bins))/length(metaClade)
   #
   pdf(sprintf('out/bayes/bayes%s.pdf',targetCol))
-    par(mfrow=c(2,1),las=1,mar=c(4,3.6,1.1,.1))
-    plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log='x',main='Individuals',xaxs='i')
-    title(xlab=sprintf('Fold increase in %s',targetCols[targetCol]),mgp=c(1.5,1,0))
+    par(mfrow=c(2,1),las=1,mar=c(3,3.6,1.1,.1))
+    plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.7,0),log='x',main='Individuals',xaxs='i')
+    title(xlab=sprintf('Fold increase in %s',gsub('\n',' ',targetCols[targetCol])),mgp=c(1.5,1,0))
     meanBin<-(bins[-length(bins)]+bins[-1])/2
     apply(indivTabs,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#0000FF11',border='#0000FF44'))
     apply(indivGenitalTabs,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#FF000011',border='#FF000044'))
     apply(indivCladeTab,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#00FF0011',border='#00FF0044'))
     abline(v=1,lty=2)
-    logAxis(1)
+    logAxis(1,mgp=c(3,.5,0))
     plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log="x",main='Population',xaxs='i')
-    title(xlab=sprintf('Fold increase in %s',targetCols[targetCol]),mgp=c(1.5,1,0))
+    title(xlab=sprintf('Fold increase in %s',gsub('\n',' ',targetCols[targetCol])),mgp=c(1.5,1,0))
     polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,metaTabs,0,0),col='#0000FF44',border='#0000FF99')
     polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,genitalTabs,0,0),col='#FF000044',border='#FF000099')
     polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,cladeTabs,0,0),col='#00FF0044',border='#00FF0099')
     abline(v=1,lty=2)
     legend('topleft',c('Recipient','Clade B','Genital'),fill=c('#0000FF44','#00FF0044','#FF000044'),border=c('#0000FF99','#00FF0099','#FF000099'),inset=.02)
-    logAxis(1)
+    logAxis(1,mgp=c(3,.5,0))
   dev.off()
-
 }
 
 
