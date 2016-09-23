@@ -70,7 +70,7 @@ targetCols<-c(
   'IFNbeta.Pooled.Donor.cells.IC50..pg.ml.'='IFNbeta IC50 (pg/ml)',
   'IFNa2.Pooled.Donor.cells.IC50..pg..ml.'='IFNa2 IC50 (pg/ml)'
 )
-fits<-lapply(targetCols,function(targetCol){
+fits<-lapply(names(targetCols),function(targetCol){
   groupTypes<-sapply(1:max(hiv$group),function(zz)paste(ifelse(hiv[hiv$group==zz,'fluid'][1]=='PL','PL','GE'),ifelse(hiv[hiv$group==zz,'donor'][1],'Don','Rec')))
   cladeBs<-unique(hiv$Pair.ID..[hiv$Subtype=='B'])
   notCladeBs<-unique(hiv$Pair.ID..[hiv$Subtype!='B'])
@@ -92,15 +92,15 @@ fits<-lapply(targetCols,function(targetCol){
     nCladeB=length(cladeBs),
     cladeBId=cladeBIds[as.character(xx$Pair.ID..)]
   ))
-  fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=30000, chains=nThreads,thin=20)
+  fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=50000, chains=nThreads,thin=20)
   return(fit)
 })
-names(fits)<-targetCols
+names(fits)<-names(targetCols)
 
-for(targetCol in targetCols){
+for(targetCol in names(targetCols)){
   fit<-fits[[targetCol]]
   allPars<-c("metaDonorMu", "metaDonorSd", "metaRecipientMu", "metaRecipientSd", "metaGenitalMu", "metaGenitalSd","metaCladeMu","metaCladeSd","donors", "sigmas", "metaSigmaSd", "metaSigmaMu", "genitals", "recipients", "clade")
-  pdf(sprintf('out/bayesFit%s.pdf',targetCol),width=20,height=20)
+  pdf(sprintf('out/bayes/bayesFit%s.pdf',targetCol),width=20,height=20)
     print(plot(fit,pars=allPars))
     print(traceplot(fit,pars=allPars))
   dev.off()
@@ -125,12 +125,10 @@ for(targetCol in targetCols){
   indivCladeTab<-apply(indivClade,2,function(x)table(cut(x,bins))/length(x))
   cladeTabs<-table(cut(metaClade,bins))/length(metaClade)
   #
-  pdf(sprintf('out/bayes%s.pdf',targetCol))
+  pdf(sprintf('out/bayes/bayes%s.pdf',targetCol))
     par(mfrow=c(2,1),las=1,mar=c(4,3.6,1.1,.1))
-    plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log='x',main='Individuals',xaxs='i',main=names(targetCols)[targetCols==targetCol])
-    #axis(1,prettyLabels,sapply(prettyLabels,function(x)as.expression(bquote(2^.(x)))),las=1)
-    #axis(1,log2(10^prettyLabels),ifelse(prettyLabels==0,1,sapply(prettyLabels,function(x)as.expression(bquote(10^.(x))))),las=1)
-    title(xlab='Fold increase',mgp=c(1.5,1,0))
+    plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log='x',main='Individuals',xaxs='i')
+    title(xlab=sprintf('Fold increase in %s',targetCols[targetCol]),mgp=c(1.5,1,0))
     meanBin<-(bins[-length(bins)]+bins[-1])/2
     apply(indivTabs,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#0000FF11',border='#0000FF44'))
     apply(indivGenitalTabs,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#FF000011',border='#FF000044'))
@@ -138,7 +136,7 @@ for(targetCol in targetCols){
     abline(v=1,lty=2)
     logAxis(1)
     plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log="x",main='Population',xaxs='i')
-    title(xlab='Fold increase',mgp=c(2,1,0))
+    title(xlab=sprintf('Fold increase in %s',targetCols[targetCol]),mgp=c(1.5,1,0))
     polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,metaTabs,0,0),col='#0000FF44',border='#0000FF99')
     polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,genitalTabs,0,0),col='#FF000044',border='#FF000099')
     polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,cladeTabs,0,0),col='#00FF0044',border='#00FF0099')
