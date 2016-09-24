@@ -2,8 +2,6 @@ library(levenR)
 library(vipor)
 library(dnar)
 library(dnaplotr)
-library(glmnet)
-library(glmnetPlotR)
 library(parallel)
 #library(beeswarm)
 

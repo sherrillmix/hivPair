@@ -1,3 +1,5 @@
+library(glmnet)
+library(glmnetPlotR)
 if(!exists('hiv'))source('readData.R')
 
 out<-mclapply(names(selectVars),function(targetCol){
