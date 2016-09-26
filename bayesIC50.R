@@ -72,7 +72,9 @@ targetCols<-c(
   'IFNa2.Pooled.Donor.cells.IC50..pg..ml.'='IFNa2 IC50 (pg/ml)'
 )
 fits<-lapply(names(targetCols),function(targetCol){
-  groupTypes<-sapply(1:max(hiv$group),function(zz)paste(ifelse(hiv[hiv$group==zz,'fluid'][1]=='PL','PL','GE'),ifelse(hiv[hiv$group==zz,'donor'][1],'Don','Rec')))
+  #groupTypes<-sapply(1:max(hiv$group),function(zz)paste(ifelse(hiv[hiv$group==zz,'fluid'][1]=='PL','PL','GE'),ifelse(hiv[hiv$group==zz,'donor'][1],'Don','Rec')))
+  #just group by donor or recipient
+  groupTypes<-sapply(1:max(hiv$group),function(zz)ifelse(hiv[hiv$group==zz,'donor'][1],'Don','Rec'))
   cladeBs<-unique(hiv$Pair.ID..[hiv$Subtype=='B'])
   notCladeBs<-unique(hiv$Pair.ID..[hiv$Subtype!='B'])
   #note 99999 is a arbitrarily high number for non clade Bs (should never be called within Stan due to if(cladeB))
