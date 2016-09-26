@@ -29,17 +29,17 @@ stanCode<-"
   }
   parameters {
     real metaDonorMu;
-    real<lower=0.0000001> metaDonorSd;
+    real<lower=0> metaDonorSd;
     real metaRecipientMu;
-    real<lower=0.0000001> metaRecipientSd;
+    real<lower=0> metaRecipientSd;
     real metaGenitalMu;
-    real<lower=0.0000001> metaGenitalSd;
+    real<lower=0> metaGenitalSd;
     real metaCladeMu;
-    real<lower=0.0000001> metaCladeSd;
+    real<lower=0> metaCladeSd;
     real donors[nPair];
-    real<lower=0.0000001> sigmaSqs[nGroup];
-    real<lower=0.0000001> metaSigmaAlpha[nGroupTypes];
-    real<lower=0.0000001> metaSigmaBeta[nGroupTypes];
+    real<lower=0> sigmaSqs[nGroup];
+    real<lower=0> metaSigmaAlpha[nGroupTypes];
+    real<lower=0> metaSigmaBeta[nGroupTypes];
     real genitals[nGenital];
     real recipients[nPair];
     real clades[nCladeB];
