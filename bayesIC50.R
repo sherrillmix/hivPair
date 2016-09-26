@@ -37,9 +37,9 @@ stanCode<-"
     real metaCladeMu;
     real<lower=0.0000001> metaCladeSd;
     real donors[nPair];
-    real<lower=0.0000001> sigmas[nGroup];
-    real<lower=0.0000001> metaSigmaSd[nGroupTypes];
-    real metaSigmaMu[nGroupTypes];
+    real<lower=0.0000001> sigmaSqs[nGroup];
+    real<lower=0.0000001> metaSigmaAlpha[nGroupTypes];
+    real<lower=0.0000001> metaSigmaBeta[nGroupTypes];
     real genitals[nGenital];
     real recipients[nPair];
     real clades[nCladeB];
@@ -57,8 +57,8 @@ stanCode<-"
     recipients ~ normal(metaRecipientMu,metaRecipientSd);
     genitals ~ normal(metaGenitalMu,metaGenitalSd);
     clades ~ normal(metaCladeMu,metaCladeSd);
-    for(ii in 1:nGroup)sigmas[ii] ~ normal(metaSigmaMu[groupTypes[ii]],metaSigmaSd[groupTypes[ii]]);
-    for (ii in 1:N)ic50[ii] ~ normal(indivMu[ii],sigmas[group[ii]]);
+    for(ii in 1:nGroup)sigmaSqs[ii] ~ normal(metaSigmaAlpha[groupTypes[ii]],metaSigmaBeta[groupTypes[ii]]);
+    for (ii in 1:N)ic50[ii] ~ normal(indivMu[ii],sqrt(sigmaSqs[group[ii]]));
   }
 "
 
@@ -100,7 +100,7 @@ names(fits)<-names(targetCols)
 
 for(targetCol in names(targetCols)){
   fit<-fits[[targetCol]]
-  allPars<-c("metaDonorMu", "metaDonorSd", "metaRecipientMu", "metaRecipientSd", "metaGenitalMu", "metaGenitalSd","metaCladeMu","metaCladeSd","donors", "sigmas", "metaSigmaSd", "metaSigmaMu", "genitals", "recipients", "clades")
+  allPars<-c("metaDonorMu", "metaDonorSd", "metaRecipientMu", "metaRecipientSd", "metaGenitalMu", "metaGenitalSd","metaCladeMu","metaCladeSd","donors", "sigmaSqs", "metaSigmaAlpha", "metaSigmaBeta", "genitals", "recipients", "clades")
   pdf(sprintf('out/bayes/bayesFit%s.pdf',targetCol),width=20,height=20)
     print(plot(fit,pars=allPars))
     print(traceplot(fit,pars=allPars))
