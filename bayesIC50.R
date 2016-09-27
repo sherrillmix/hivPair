@@ -71,7 +71,7 @@ targetCols<-c(
   'IFNbeta.Pooled.Donor.cells.IC50..pg.ml.'='IFNbeta IC50 (pg/ml)',
   'IFNa2.Pooled.Donor.cells.IC50..pg..ml.'='IFNa2 IC50 (pg/ml)'
 )
-fits<-lapply(names(targetCols)[1],function(targetCol){
+fits<-lapply(names(targetCols),function(targetCol){
   groupTypes<-sapply(1:max(hiv$group),function(zz)paste(ifelse(hiv[hiv$group==zz,'fluid'][1]=='PL','PL','GE'),ifelse(hiv[hiv$group==zz,'donor'][1],'Don','Rec')))
   #just group by donor or recipient
   #groupTypes<-sapply(1:max(hiv$group),function(zz)ifelse(hiv[hiv$group==zz,'donor'][1],'Don','Rec'))
@@ -98,7 +98,6 @@ fits<-lapply(names(targetCols)[1],function(targetCol){
   fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=50000, chains=nThreads,thin=25)
   return(fit)
 })
-browser()
 names(fits)<-names(targetCols)
 
 for(targetCol in names(targetCols)){
@@ -108,7 +107,6 @@ for(targetCol in names(targetCols)){
     print(plot(fit,pars=allPars))
     print(traceplot(fit,pars=allPars))
   dev.off()
-
   #
   sims<-as.array(fit)
   dim(sims)<-c(prod(dim(sims)[c(1,2)]),dim(sims)[3])
