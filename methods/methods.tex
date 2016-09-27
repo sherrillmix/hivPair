@@ -1,0 +1,42 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{bbm}
+\usepackage[hidelinks]{hyperref}
+\usepackage[right=1in,left=1in]{geometry}
+\setlength{\parindent}{0em}
+\setlength{\parskip}{2em}
+\begin{document}
+IFN$\alpha$ IC$_{50}$ was modeled using a Bayesian hierarchical model. In summary, the $i^\text{th}$ log IC$_{50}$ for each donor-recipient pair was modeled as a normal distribution $N(\mu_i,\sigma^2_i)$ with mean $\mu_i$:
+\[
+  \mu_i=\text{base}_{\text{pair}_i} + \beta_{\text{recipient,pair}_i} \mathbbm{1}(\text{recipient}_i) + \beta_{\text{genital,pair}_i} \mathbbm{1}(\text{genital}_i) + \beta_{\text{clade,pair}_i} \mathbbm{1}(\text{cladeB}_i)\mathbbm{1}(\text{recipient}_i)
+\]
+and variance $\sigma^2_i$:
+\[
+  \sigma^2_i = \begin{cases}
+    \sigma^2_{\text{genital,pair}_i} & \text{if } \text{genital}_i\\
+    \sigma^2_{\text{recipient,pair}_i} & \text{if } \text{recipient}_i\\
+    \sigma^2_{\text{donor,pair}_i} & \text{otherwise}\\
+  \end{cases}
+\]
+where pair$_i$ indicates the pair identity of the $i^\text{th}$ IC$_{50}$ observation, $\mathbbm{1}()$ is an indicator function that is 1 if True and 0 if False and the $\beta$ are coefficients modeling the change in IC$_{50}$ expected for viruses in recipients, in donor genital samples or from HIV clade B.
+
+The coefficients $\beta_{\text{pair}_i}$ each come from a normal hyperprior:
+\[\beta_{\text{recipient,pair}_i} \sim N(\mu_{\text{recipient}},\sigma^2_{\text{recipient}})\]
+\[ \beta_{\text{genital,pair}_i} \sim N(\mu_{\text{genital}},\sigma^2_{\text{genital}})\]
+\[\beta_{\text{clade,pair}_i} \sim N(\mu_{\text{clade}},\sigma^2_{\text{clade}}) \]
+and coefficients $\sigma_{\text{pair}_i}$ each come from a normal hyperprior:
+\[\sigma_{\text{donor,pair}_i} \sim N(\theta_\text{donor},\phi^2_\text{donor})\]
+\[\sigma_{\text{recipient,pair}_i} \sim N(\theta_\text{recipient},\phi^2_\text{recipient})\]
+\[\sigma_{\text{genital,pair}_i} \sim N(\theta_\text{genital},\phi^2_\text{genital})\]
+
+The hyperparameters $\mu_{\text{recipient}}$, $\sigma^2_{\text{recipient}}$, $\mu_{\text{genital}}$, $\sigma^2_{\text{genital}}$, $\mu_{\text{clade}}$, $\sigma^2_{\text{clade}}$ and 
+$\theta_{\text{recipient}}$, $\phi^2_{\text{recipient}}$, $\theta_{\text{genital}}$, $\phi^2_{\text{genital}}$, $\theta_{\text{donor}}$, $\phi^2_{\text{donor}}$ were all given a flat prior probability.  Plots and statistics are based on the estimated posterior probabilities of $\mu_{\text{recipient}}$, $\mu_{\text{genital}}$ and $\mu_{\text{clade}}$.
+
+
+This model was repeated for each viral parameter of interest. The model was implemented in Stan using the \texttt{R} package \texttt{rstan}. Code is available at:\\
+\url{https://github.com/sherrillmix/hivPair/blob/master/bayesIC50.R}.
+
+
+
+\end{document}
+
