@@ -8,6 +8,11 @@ pdf('out/alphaVsBeta.pdf')
   logAxis(1)
   logAxis(2,las=1)
   legend('topleft',names(cols),pch=21,pt.bg=cols,inset=.01,title='Pair')
+  for(ii in unique(hiv$select)){
+    withAs(xx=hiv[hiv$select==ii,],plot(xx$IFNa2.Pooled.Donor.cells.IC50..pg..ml.,xx$IFNbeta.Pooled.Donor.cells.IC50..pg.ml.,log='xy',xaxt='n',yaxt='n',xlab='IFNa2 IC50 (pg/ml)',ylab='IFNbeta IC50 (pg/ml)',bg=cols[as.character(xx$Pair.ID..)],pch=21,col=NA,main=ii)
+    logAxis(1)
+    logAxis(2,las=1)
+  }
 dev.off()
 
 line<-function(alpha,beta){
