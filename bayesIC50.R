@@ -57,7 +57,7 @@ stanCode<-"
     recipients ~ normal(metaRecipientMu,metaRecipientSd);
     genitals ~ normal(metaGenitalMu,metaGenitalSd);
     clades ~ normal(metaCladeMu,metaCladeSd);
-    for(ii in 1:nGroup)sigmaSqs[ii] ~ normal(metaSigmaAlpha[groupTypes[ii]],metaSigmaBeta[groupTypes[ii]]);
+    for(ii in 1:nGroup)sigmaSqs[ii] ~ inv_gamma(metaSigmaAlpha[groupTypes[ii]],metaSigmaBeta[groupTypes[ii]]);
     for (ii in 1:N)ic50[ii] ~ normal(indivMu[ii],sqrt(sigmaSqs[group[ii]]));
   }
 "
