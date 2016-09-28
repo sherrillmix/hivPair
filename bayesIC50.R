@@ -20,7 +20,9 @@ stanCode<-"
     int<lower=0> nGroup;
     int<lower=1> group[N];
     int<lower=0> nPair;
-    int<lower=1> pair[N];
+    int<lower=1> pairIds[N];
+    int<lower=0> nRecipient;
+    int<lower=0> recipientIds[N];
     int<lower=0> nGroupTypes;
     int<lower=1> groupTypes[nGroup];
     int<lower=0> nGenital;
@@ -38,27 +40,36 @@ stanCode<-"
     real<lower=0> metaCladeSd;
     real donors[nPair];
     real<lower=0> sigmas[nGroup];
-    real metaSigmaMu[nGroupTypes];
+    real<lower=0> metaSigmaMu[nGroupTypes];
     real<lower=0> metaSigmaSigma[nGroupTypes];
     real genitals[nGenital];
-    real recipients[nPair];
+    real recipients[nRecipient];
     real clades[nCladeB];
   }
   transformed parameters{
     real indivMu[N];
+    real<lower=0> indivSigma[N];
     for (ii in 1:N){
-      indivMu[ii] = donors[pair[ii]]+recipients[pair[ii]]*isRecipient[ii];
-      if(isGenital[ii])indivMu[ii]=indivMu[ii]+genitals[pair[ii]];
+      indivMu[ii] = donors[pairIds[ii]];
+      if(isRecipient[ii])indivMu[ii]=indivMu[ii]+recipients[recipientIds[ii]];
+      if(isGenital[ii])indivMu[ii]=indivMu[ii]+genitals[pairIds[ii]];
       if(isCladeB[ii])indivMu[ii]=indivMu[ii]+isRecipient[ii]*clades[cladeBId[ii]];
     }
+    indivSigma=sigmas[group[ii]];
   }
   model {
+    metaSigmaMu ~ gamma(2,.5);
+    metaSigmaSigma ~ gamma(2,.5);
+    metaDonorSd ~ gamma(2,.5);
+    metaRecipientSd ~ gamma(2,.5);
+    metaGenitalSd ~ gamma(2,.5);
+    metaCladeSd ~ gamma(2,.5);
     donors ~ normal(metaDonorMu,metaDonorSd);
     recipients ~ normal(metaRecipientMu,metaRecipientSd);
     genitals ~ normal(metaGenitalMu,metaGenitalSd);
     clades ~ normal(metaCladeMu,metaCladeSd);
     for(ii in 1:nGroup)sigmas[ii] ~ normal(metaSigmaMu[groupTypes[ii]],metaSigmaSigma[groupTypes[ii]]);
-    for (ii in 1:N)ic50[ii] ~ normal(indivMu[ii],sigmas[group[ii]]);
+    ic50 ~ normal(indivMu,indivSigma);
   }
 "
 
@@ -77,6 +88,9 @@ fits<-lapply(names(targetCols),function(targetCol){
   notCladeBs<-unique(hiv$Pair.ID..[hiv$Subtype!='B'])
   #note 99999 is a arbitrarily high number for non clade Bs (should never be called within Stan due to if(cladeB))
   cladeBIds<-structure(c(1:length(cladeBs),rep(99999,length(notCladeBs))),.Names=c(cladeBs,notCladeBs))
+  recipients<-unique(hiv[!hiv$donor,'sample'][order(hiv$Pair.ID..[!hiv$donor])])
+  notRecipients<-unique(hiv[hiv$donor,'sample'])
+  recipientIds<-structure(c(1:length(recipients),rep(99999,length(notRecipients))),.Names=c(recipients,notRecipients))
   dat<-withAs('xx'=hiv[hiv$select=='UT'&!is.na(hiv[,targetCol]),],list(
     ic50=log10(xx[,targetCol]),
     N=nrow(xx),
@@ -86,21 +100,23 @@ fits<-lapply(names(targetCols),function(targetCol){
     isRecipient=as.integer(!xx$donor),
     nGroup=max(xx$group),
     group=xx$group,
-    pair=xx$Pair.ID..,
+    pairIds=xx$Pair.ID..,
     nPair=max(xx$Pair.ID..),
+    nRecipient=length(unique(xx[!xx$donor,'sample'])),
+    recipientIds=recipientIds[xx$sample],
     nGroupTypes=length(unique(groupTypes)),
     groupTypes=as.numeric(as.factor(groupTypes)),
     nCladeB=length(cladeBs),
     cladeBId=cladeBIds[as.character(xx$Pair.ID..)]
   ))
-  fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=50000, chains=nThreads,thin=25)
+  fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=50000, chains=nThreads,thin=25,control=list(adapt_delta=.99))
   return(fit)
 })
 names(fits)<-names(targetCols)
 
 for(targetCol in names(targetCols)){
   fit<-fits[[targetCol]]
-  allPars<-c("metaDonorMu", "metaDonorSd", "metaRecipientMu", "metaRecipientSd", "metaGenitalMu", "metaGenitalSd","metaCladeMu","metaCladeSd","donors", "sigmas", "metaSigmaAlpha", "metaSigmaBeta", "genitals", "recipients", "clades")
+  allPars<-c("metaDonorMu", "metaDonorSd", "metaRecipientMu", "metaRecipientSd", "metaGenitalMu", "metaGenitalSd","metaCladeMu","metaCladeSd","donors", "sigmas", "metaSigmaMu", "metaSigmaSigma", "genitals", "recipients", "clades")
   pdf(sprintf('out/bayes/bayesFit%s.pdf',targetCol),width=20,height=20)
     print(plot(fit,pars=allPars))
     print(traceplot(fit,pars=allPars))
