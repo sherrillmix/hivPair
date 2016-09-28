@@ -55,8 +55,8 @@ stanCode<-"
       if(isRecipient[ii])indivMu[ii]=indivMu[ii]+metaRecipientMu+recipients[recipientIds[ii]]*metaRecipientSd;
       if(isGenital[ii])indivMu[ii]=indivMu[ii]+metaGenitalMu+genitals[pairIds[ii]]*metaGenitalSd;
       if(isCladeB[ii] && isRecipient[ii])indivMu[ii]=indivMu[ii]+metaCladeMu+clades[cladeBId[ii]]*metaCladeSd;
+      indivSigma[ii]=metaSigmaMu[groupTypes[groupIds[ii]]]+sigmas[groupTypes[groupIds[ii]]]*metaSigmaSigma[groupTypes[groupIds[ii]]];
     }
-    indivSigma=sigmas[groupIds];
   }
   model {
     metaSigmaMu ~ gamma(2,.5);
@@ -69,7 +69,7 @@ stanCode<-"
     recipients ~ normal(0,1);
     genitals ~ normal(0,1);
     clades ~ normal(0,1);
-    for(ii in 1:nGroup)sigmas[ii] ~ normal(metaSigmaMu[groupTypes[ii]],metaSigmaSigma[groupTypes[ii]]);
+    sigmas ~ normal(0,1);
     ic50 ~ normal(indivMu,indivSigma);
   }
 "
