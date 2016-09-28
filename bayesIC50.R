@@ -1,5 +1,6 @@
 library('rstan')
 library('dnar')
+library('vioplot')
 
 #for parallel
 nThreads<-50
@@ -18,7 +19,7 @@ stanCode<-"
     int<lower=0,upper=1> isGenital[N];
     int<lower=0,upper=1> isRecipient[N];
     int<lower=0> nGroup;
-    int<lower=1> group[N];
+    int<lower=1> groupIds[N];
     int<lower=0> nPair;
     int<lower=1> pairIds[N];
     int<lower=0> nRecipient;
@@ -50,12 +51,12 @@ stanCode<-"
     real indivMu[N];
     real<lower=0> indivSigma[N];
     for (ii in 1:N){
-      indivMu[ii] = donors[pairIds[ii]];
-      if(isRecipient[ii])indivMu[ii]=indivMu[ii]+recipients[recipientIds[ii]];
-      if(isGenital[ii])indivMu[ii]=indivMu[ii]+genitals[pairIds[ii]];
-      if(isCladeB[ii])indivMu[ii]=indivMu[ii]+isRecipient[ii]*clades[cladeBId[ii]];
+      indivMu[ii] = metaDonorMu+donors[pairIds[ii]]*metaDonorSd;
+      if(isRecipient[ii])indivMu[ii]=indivMu[ii]+metaRecipientMu+recipients[recipientIds[ii]]*metaRecipientSd;
+      if(isGenital[ii])indivMu[ii]=indivMu[ii]+metaGenitalMu+genitals[pairIds[ii]]*metaGenitalSd;
+      if(isCladeB[ii] && isRecipient[ii])indivMu[ii]=indivMu[ii]+metaCladeMu+clades[cladeBId[ii]]*metaCladeSd;
     }
-    indivSigma=sigmas[group[ii]];
+    indivSigma=sigmas[groupIds];
   }
   model {
     metaSigmaMu ~ gamma(2,.5);
@@ -64,10 +65,10 @@ stanCode<-"
     metaRecipientSd ~ gamma(2,.5);
     metaGenitalSd ~ gamma(2,.5);
     metaCladeSd ~ gamma(2,.5);
-    donors ~ normal(metaDonorMu,metaDonorSd);
-    recipients ~ normal(metaRecipientMu,metaRecipientSd);
-    genitals ~ normal(metaGenitalMu,metaGenitalSd);
-    clades ~ normal(metaCladeMu,metaCladeSd);
+    donors ~ normal(0,1);
+    recipients ~ normal(0,1);
+    genitals ~ normal(0,1);
+    clades ~ normal(0,1);
     for(ii in 1:nGroup)sigmas[ii] ~ normal(metaSigmaMu[groupTypes[ii]],metaSigmaSigma[groupTypes[ii]]);
     ic50 ~ normal(indivMu,indivSigma);
   }
@@ -99,9 +100,9 @@ fits<-lapply(names(targetCols),function(targetCol){
     nGenital=max(xx[xx$fluid!='PL','Pair.ID..']),
     isRecipient=as.integer(!xx$donor),
     nGroup=max(xx$group),
-    group=xx$group,
-    pairIds=xx$Pair.ID..,
+    groupIds=xx$group,
     nPair=max(xx$Pair.ID..),
+    pairIds=xx$Pair.ID..,
     nRecipient=length(unique(xx[!xx$donor,'sample'])),
     recipientIds=recipientIds[xx$sample],
     nGroupTypes=length(unique(groupTypes)),
@@ -110,21 +111,32 @@ fits<-lapply(names(targetCols),function(targetCol){
     cladeBId=cladeBIds[as.character(xx$Pair.ID..)]
   ))
   fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=50000, chains=nThreads,thin=25,control=list(adapt_delta=.99))
-  return(fit)
+  return(list('fit'=fit,'dat'=dat))
 })
 names(fits)<-names(targetCols)
 
 for(targetCol in names(targetCols)){
-  fit<-fits[[targetCol]]
-  allPars<-c("metaDonorMu", "metaDonorSd", "metaRecipientMu", "metaRecipientSd", "metaGenitalMu", "metaGenitalSd","metaCladeMu","metaCladeSd","donors", "sigmas", "metaSigmaMu", "metaSigmaSigma", "genitals", "recipients", "clades")
-  pdf(sprintf('out/bayes/bayesFit%s.pdf',targetCol),width=20,height=20)
-    print(plot(fit,pars=allPars))
-    print(traceplot(fit,pars=allPars))
-  dev.off()
+  fit<-fits[[targetCol]][['fit']]
+  dat<-fits[[targetCol]][['dat']]
   #
   sims<-as.array(fit)
   dim(sims)<-c(prod(dim(sims)[c(1,2)]),dim(sims)[3])
   colnames(sims)<-dimnames(as.array(fit))[[3]]
+  #
+  allPars<-c("metaDonorMu", "metaDonorSd", "metaRecipientMu", "metaRecipientSd", "metaGenitalMu", "metaGenitalSd","metaCladeMu","metaCladeSd","donors", "sigmas", "metaSigmaMu", "metaSigmaSigma", "genitals", "recipients", "clades")
+  indivMuCols<-sprintf('indivMu[%d]',1:dat[['N']])
+  indivSdCols<-sprintf('indivSigma[%d]',1:dat[['N']])
+  simFits<-mapply(function(mu,sigma)rnorm(nrow(sims),sims[,mu],sims[,sigma]),indivMuCols,indivSdCols,SIMPLIFY=FALSE)
+  #
+  pdf(sprintf('out/bayes/bayesFit%s.pdf',targetCol),width=20,height=20)
+    print(plot(fit,pars=allPars))
+    print(traceplot(fit,pars=allPars))
+    par(mar=c(4,5,2,0))
+    plot(1,1,type='n',xlim=c(1,dat[['N']])+c(-1,1),ylim=range(unlist(simFits)),xlab='Virus ID',ylab=sprintf('Log10 %s',targetCols[targetCol]),xaxs='i',cex.axis=1.5,cex.lab=2,main='Posterior predictive distributions',cex.main=2)
+    do.call(vioplot,c('x'=list(simFits[[1]]),simFits[-1],'add'=list(TRUE),'colMed'=list(NA),'col'=list('#00000033')))
+    #points(rep(1:length(simFits),sapply(simFits,length)),unlist(simFits),pch='.',col='#00000033')
+    points(1:length(dat[['ic50']]),dat[['ic50']],col='red',pch='+',lwd=2)
+  dev.off()
   #
   indivRecipBeta<-sims[,grep('recipients\\[[0-9]\\]',colnames(sims))]
   metaBeta<-sims[,'metaRecipientMu']
