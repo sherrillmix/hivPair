@@ -66,8 +66,6 @@ targetCols<-c(
   'Env.RT'='Env/RT',
   'Infectivity.RLU.pg.RT...T1249.'='Infectivity (RLU/pg RT)',
   'Replicative.capacity.Pooled.Donor.cells.p24.d7'='Pooled donor\nReplicative capacity (day 7 p24)',
-  'meanRepCap'='Mean replicative capacity\n(proportion of maximum day 7 p24)',
-  'meanIfna'='IFNa2 IC50 (pg/ml)',
   'IFNbeta.Pooled.Donor.cells.IC50..pg.ml.'='IFNbeta IC50 (pg/ml)',
   'IFNa2.Pooled.Donor.cells.IC50..pg..ml.'='IFNa2 IC50 (pg/ml)'
 )
