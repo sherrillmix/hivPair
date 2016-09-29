@@ -29,6 +29,14 @@ stanCode<-"
     int<lower=0> nGenital;
     int<lower=0> nCladeB;
     int<lower=1> cladeBId[N];
+    int<lower=0> nAlpha;
+    int<lower=1> alphaIds[N];
+    int<lower=0> nBeta;
+    int<lower=1> betaIds[N];
+    int<lower=0> nRecipientAlpha;
+    int<lower=1> recipientAlphaIds[N];
+    int<lower=0> nRecipientBeta;
+    int<lower=1> recipientBetaIds[N];
   }
   parameters {
     real metaDonorMu;
@@ -46,6 +54,18 @@ stanCode<-"
     real genitals[nGenital];
     real recipients[nRecipient];
     real clades[nCladeB];
+    real metaAlphaMu;
+    real<lower=0> metaAlphaSd;
+    real metaBetaMu;
+    real<lower=0> metaBetaSd;
+    real metaRecipientAlphaMu;
+    real<lower=0> metaRecipientAlphaSd;
+    real metaRecipientBetaMu;
+    real<lower=0> metaRecipientBetaSd;
+    real alphas[nAlpha];
+    real betas[nBeta];
+    real recipientAlphas[nRecipientAlpha];
+    real recipientBetas[nRecipientBeta];
   }
   transformed parameters{
     real indivMu[N];
@@ -55,7 +75,11 @@ stanCode<-"
       if(isRecipient[ii])indivMu[ii]=indivMu[ii]+metaRecipientMu+recipients[recipientIds[ii]]*metaRecipientSd;
       if(isGenital[ii])indivMu[ii]=indivMu[ii]+metaGenitalMu+genitals[pairIds[ii]]*metaGenitalSd;
       if(isCladeB[ii] && isRecipient[ii])indivMu[ii]=indivMu[ii]+metaCladeMu+clades[cladeBId[ii]]*metaCladeSd;
-      indivSigma[ii]=metaSigmaMu[groupTypes[groupIds[ii]]]+sigmas[groupTypes[groupIds[ii]]]*metaSigmaSigma[groupTypes[groupIds[ii]]];
+      if(recipientAlphaIds[ii]<999)indivMu[ii]=indivMu[ii]+metaRecipientAlphaMu+recipientAlphas[recipientAlphaIds[ii]]*metaRecipientAlphaSd;
+      if(recipientBetaIds[ii]<999)indivMu[ii]=indivMu[ii]+metaRecipientBetaMu+recipientBetas[recipientBetaIds[ii]]*metaRecipientBetaSd;
+      if(alphaIds[ii]<999)indivMu[ii]=indivMu[ii]+metaAlphaMu+alphas[alphaIds[ii]]*metaAlphaSd;
+      if(betaIds[ii]<999)indivMu[ii]=indivMu[ii]+metaBetaMu+betas[betaIds[ii]]*metaBetaSd;
+      indivSigma[ii]=metaSigmaMu[groupTypes[groupIds[ii]]]+sigmas[groupIds[ii]]*metaSigmaSigma[groupTypes[groupIds[ii]]];
     }
   }
   model {
@@ -65,34 +89,42 @@ stanCode<-"
     metaRecipientSd ~ gamma(2,.5);
     metaGenitalSd ~ gamma(2,.5);
     metaCladeSd ~ gamma(2,.5);
+    metaAlphaSd ~ gamma(2,.5);
+    metaBetaSd ~ gamma(2,.5);
+    metaRecipientAlphaSd ~ gamma(2,.5);
+    metaRecipientBetaSd ~ gamma(2,.5);
     donors ~ normal(0,1);
     recipients ~ normal(0,1);
     genitals ~ normal(0,1);
     clades ~ normal(0,1);
     sigmas ~ normal(0,1);
+    alphas ~ normal(0,1);
+    betas ~ normal(0,1);
+    recipientAlphas ~ normal(0,1);
+    recipientBetas ~ normal(0,1);
     ic50 ~ normal(indivMu,indivSigma);
   }
 "
 
-targetCols<-c(
-  'Env.RT'='Env/RT',
-  'Infectivity.RLU.pg.RT...T1249.'='Infectivity (RLU/pg RT)',
-  'Replicative.capacity.Pooled.Donor.cells.p24.d7'='Pooled donor\nReplicative capacity (day 7 p24)',
-  'IFNbeta.Pooled.Donor.cells.IC50..pg.ml.'='IFNbeta IC50 (pg/ml)',
-  'IFNa2.Pooled.Donor.cells.IC50..pg..ml.'='IFNa2 IC50 (pg/ml)'
-)
 fits<-lapply(names(targetCols),function(targetCol){
   groupTypes<-sapply(1:max(hiv$group),function(zz)paste(ifelse(hiv[hiv$group==zz,'fluid'][1]=='PL','PL','GE'),ifelse(hiv[hiv$group==zz,'donor'][1],'Don','Rec')))
   #just group by donor or recipient
   #groupTypes<-sapply(1:max(hiv$group),function(zz)ifelse(hiv[hiv$group==zz,'donor'][1],'Don','Rec'))
-  cladeBs<-unique(hiv$Pair.ID..[hiv$Subtype=='B'])
-  notCladeBs<-unique(hiv$Pair.ID..[hiv$Subtype!='B'])
   #note 99999 is a arbitrarily high number for non clade Bs (should never be called within Stan due to if(cladeB))
-  cladeBIds<-structure(c(1:length(cladeBs),rep(99999,length(notCladeBs))),.Names=c(cladeBs,notCladeBs))
-  recipients<-unique(hiv[!hiv$donor,'sample'][order(hiv$Pair.ID..[!hiv$donor])])
-  notRecipients<-unique(hiv[hiv$donor,'sample'])
-  recipientIds<-structure(c(1:length(recipients),rep(99999,length(notRecipients))),.Names=c(recipients,notRecipients))
-  dat<-withAs('xx'=hiv[hiv$select=='UT'&!is.na(hiv[,targetCol]),],list(
+  assignGroups<-function(x,selector,outId=99999){
+    cladeBs<-unique(x[selector])
+    notCladeBs<-unique(x[!selector])
+    cladeBIds<-structure(c(1:length(cladeBs),rep(outId,length(notCladeBs))),.Names=c(cladeBs,notCladeBs))
+    return(cladeBIds)
+  }
+  cladeBIds<-assignGroups(hiv$Pair.ID..,hiv$Subtype=='B')
+  recipientIds<-assignGroups(hiv$sample[order(hiv$Pair.ID..)],!hiv$donor[order(hiv$Pair.ID..)])
+  alphaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='A2'&hiv[order(hiv$Pair.ID..),'donor'])
+  betaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='BE'&hiv[order(hiv$Pair.ID..),'donor'])
+  recipientAlphaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='A2'&!hiv[order(hiv$Pair.ID..),'donor'])
+  recipientBetaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='BE'&!hiv[order(hiv$Pair.ID..),'donor'])
+  #dat<-withAs('xx'=hiv[hiv$select=='UT'&!is.na(hiv[,targetCol]),],list(
+  dat<-withAs('xx'=hiv[!is.na(hiv[,targetCol]),],list(
     ic50=log10(xx[,targetCol]),
     N=nrow(xx),
     isCladeB=as.integer(xx$Subtype=='B'),
@@ -103,12 +135,21 @@ fits<-lapply(names(targetCols),function(targetCol){
     groupIds=xx$group,
     nPair=max(xx$Pair.ID..),
     pairIds=xx$Pair.ID..,
-    nRecipient=length(unique(xx[!xx$donor,'sample'])),
+    nRecipient=sum(recipientIds<9999),
     recipientIds=recipientIds[xx$sample],
     nGroupTypes=length(unique(groupTypes)),
     groupTypes=as.numeric(as.factor(groupTypes)),
-    nCladeB=length(cladeBs),
-    cladeBId=cladeBIds[as.character(xx$Pair.ID..)]
+    nCladeB=sum(cladeBIds<9999),
+    cladeBId=cladeBIds[as.character(xx$Pair.ID..)],
+    nAlpha=sum(alphaIds<9999),
+    alphaIds=alphaIds[xx$sampleSelect],
+    nBeta=sum(betaIds<9999),
+    betaIds=betaIds[xx$sampleSelect],
+    nRecipientAlpha=sum(recipientAlphaIds<9999),
+    recipientAlphaIds=recipientAlphaIds[xx$sampleSelect],
+    nRecipientBeta=sum(recipientBetaIds<9999),
+    recipientBetaIds=recipientBetaIds[xx$sampleSelect],
+    isBeta=as.numeric(xx$select=='BE')
   ))
   fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=50000, chains=nThreads,thin=25,control=list(adapt_delta=.99))
   return(list('fit'=fit,'dat'=dat))
@@ -123,7 +164,7 @@ for(targetCol in names(targetCols)){
   dim(sims)<-c(prod(dim(sims)[c(1,2)]),dim(sims)[3])
   colnames(sims)<-dimnames(as.array(fit))[[3]]
   #
-  allPars<-c("metaDonorMu", "metaDonorSd", "metaRecipientMu", "metaRecipientSd", "metaGenitalMu", "metaGenitalSd","metaCladeMu","metaCladeSd","donors", "sigmas", "metaSigmaMu", "metaSigmaSigma", "genitals", "recipients", "clades")
+  allPars<-c("metaDonorMu", "metaDonorSd", "metaRecipientMu", "metaRecipientSd", "metaGenitalMu", "metaGenitalSd","metaCladeMu","metaCladeSd","donors", "sigmas", "metaSigmaMu", "metaSigmaSigma", "genitals", "recipients", "clades","metaAlphaMu","metaAlphaSd","metaBetaMu","metaBetaSd","alphas","betas","metaRecipientAlphaMu","metaRecipientAlphaSd","metaRecipientBetaMu","metaRecipientBetaSd","recipientAlphas","recipientBetas")
   indivMuCols<-sprintf('indivMu[%d]',1:dat[['N']])
   indivSdCols<-sprintf('indivSigma[%d]',1:dat[['N']])
   simFits<-mapply(function(mu,sigma)rnorm(nrow(sims),sims[,mu],sims[,sigma]),indivMuCols,indivSdCols,SIMPLIFY=FALSE)
@@ -136,14 +177,27 @@ for(targetCol in names(targetCols)){
     do.call(vioplot,c('x'=list(simFits[[1]]),simFits[-1],'add'=list(TRUE),'colMed'=list(NA),'col'=list('#00000033')))
     #points(rep(1:length(simFits),sapply(simFits,length)),unlist(simFits),pch='.',col='#00000033')
     points(1:length(dat[['ic50']]),dat[['ic50']],col='red',pch='+',lwd=2)
+    #pairs(fit,pars=c("metaSigmaMu","metaSigmaSigma", "sigmas"))
+    #pairs(fit,pars=c("genitals","metaGenitalMu","metaGenitalSd"))
+    #pairs(fit,pars=c("recipients","metaRecipientMu","metaRecipientSd"))
+    #pairs(fit,pars=c("clades","metaCladeMu","metaCladeSd"))
+    #pairs(fit,pars=c("donors","metaDonorMu","metaDonorSd"))
   dev.off()
   #
-  indivRecipBeta<-sims[,grep('recipients\\[[0-9]\\]',colnames(sims))]
+  indivRecipBeta<-sims[,grep('recipients\\[[0-9]\\]',colnames(sims))]*sims[,'metaRecipientSd']+sims[,'metaRecipientMu']
   metaBeta<-sims[,'metaRecipientMu']
-  indivGenital<-sims[,grep('genitals\\[[0-9]\\]',colnames(sims))]
+  indivGenital<-sims[,grep('genitals\\[[0-9]\\]',colnames(sims))]*sims[,'metaGenitalSd']+sims[,'metaGenitalMu']
   metaGenital<-sims[,'metaGenitalMu']
-  indivClade<-sims[,grep('clades\\[[0-9]\\]',colnames(sims))]
+  indivClade<-sims[,grep('clades\\[[0-9]\\]',colnames(sims))]*sims[,'metaCladeSd']+sims[,'metaCladeMu']
   metaClade<-sims[,'metaCladeMu']
+  indivAlpha<-sims[,grep('alphas\\[[0-9]\\]',colnames(sims))]*sims[,'metaAlphaSd']+sims[,'metaAlphaMu']
+  metaAlpha<-sims[,'metaAlphaMu']
+  indivBeta<-sims[,grep('betas\\[[0-9]\\]',colnames(sims))]*sims[,'metaBetaSd']+sims[,'metaBetaMu']
+  metaBeta<-sims[,'metaBetaMu']
+  indivRecAlpha<-sims[,grep('recipientAlphas\\[[0-9]\\]',colnames(sims))]*sims[,'metaRecipientAlphaSd']+sims[,'metaRecipientAlphaMu']
+  metaRecAlpha<-sims[,'metaRecipientAlphaMu']
+  indivRecBeta<-sims[,grep('recipientBetas\\[[0-9]\\]',colnames(sims))]*sims[,'metaRecipientBetaSd']+sims[,'metaRecipientBetaMu']
+  metaRecBeta<-sims[,'metaRecipientBetaMu']
   xlim<-c(-.7,2.3)
   #
   bins<-seq(xlim[1],xlim[2],.01)
@@ -153,9 +207,17 @@ for(targetCol in names(targetCols)){
   genitalTabs<-table(cut(metaGenital,bins))/length(metaGenital)
   indivCladeTab<-apply(indivClade,2,function(x)table(cut(x,bins))/length(x))
   cladeTabs<-table(cut(metaClade,bins))/length(metaClade)
-  #
+  indivAlphaTab<-apply(indivAlpha,2,function(x)table(cut(x,bins))/length(x))
+  alphaTabs<-table(cut(metaAlpha,bins))/length(metaClade)
+  indivBetaTab<-apply(indivBeta,2,function(x)table(cut(x,bins))/length(x))
+  betaTabs<-table(cut(metaBeta,bins))/length(metaClade)
+  indivRecAlphaTab<-apply(indivRecAlpha,2,function(x)table(cut(x,bins))/length(x))
+  recAlphaTabs<-table(cut(metaRecAlpha,bins))/length(metaClade)
+  indivRecBetaTab<-apply(indivRecBeta,2,function(x)table(cut(x,bins))/length(x))
+  recBetaTabs<-table(cut(metaRecBeta,bins))/length(metaClade)
+  
   pdf(sprintf('out/bayes/bayes%s.pdf',targetCol))
-    par(mfrow=c(2,1),las=1,mar=c(3,3.6,1.1,.1))
+    par(mfrow=c(4,1),las=1,mar=c(3,3.6,1.1,.1))
     plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.7,0),log='x',main='Individuals',xaxs='i')
     title(xlab=sprintf('Fold increase in %s',gsub('\n',' ',targetCols[targetCol])),mgp=c(1.5,1,0))
     meanBin<-(bins[-length(bins)]+bins[-1])/2
@@ -172,7 +234,22 @@ for(targetCol in names(targetCols)){
     abline(v=1,lty=2)
     legend('topleft',c('Recipient','Clade B','Genital'),fill=c('#0000FF44','#00FF0044','#FF000044'),border=c('#0000FF99','#00FF0099','#FF000099'),inset=.02)
     logAxis(1,mgp=c(3,.5,0))
+    plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log="x",main='Individuals',xaxs='i')
+    title(xlab=sprintf('Fold increase in %s',gsub('\n',' ',targetCols[targetCol])),mgp=c(1.5,1,0))
+    logAxis(1,mgp=c(3,.5,0))
+    abline(v=1,lty=2)
+    apply(indivAlphaTab,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#0000FF11',border='#0000FF44'))
+    apply(indivBetaTab,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#FF000011',border='#FF000044'))
+    plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log="x",main='Population',xaxs='i')
+    title(xlab=sprintf('Fold increase in %s',gsub('\n',' ',targetCols[targetCol])),mgp=c(1.5,1,0))
+    logAxis(1,mgp=c(3,.5,0))
+    abline(v=1,lty=2)
+    polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,alphaTabs,0,0),col='#0000FF44',border='#0000FF99')
+    polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,betaTabs,0,0),col='#FF000044',border='#FF000099')
+    polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,recAlphaTabs,0,0),col='#00FF0044',border='#00FF0099')
+    polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,recBetaTabs,0,0),col='#00999944',border='#00999999')
   dev.off()
+
 }
 
 
