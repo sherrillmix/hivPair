@@ -1,3 +1,4 @@
+library(vipor)
 if(!exists('hiv'))source('readData.R')
 
 targetCols<-c(
@@ -36,6 +37,32 @@ pdf('out/pca.pdf')
 dev.off()
 
 scaled<-apply(hiv[selector,names(targetCols)],2,function(x)(x-mean(x))/sd(x))
-rownames(scaled)<-withAs(hiv=hiv[selector,],paste(hiv$sampleFluidSelect,ave(hiv$sampleFluidSelect,hiv$sampleFluidSelect,FUN=function(x)1:length(x))))
-pdf('out/tree.pdf',height=50,width=20);par(mar=c(4,1,1,10));plot(as.dendrogram(hclust(dist(scaled))),horiz=TRUE);dev.off()
+sampleNames<-withAs(xx=hiv[selector,],paste(xx$sampleFluidSelect,ave(xx$sampleFluidSelect,xx$sampleFluidSelect,FUN=function(x)1:length(x))))
+rownames(scaled)<-sampleNames
+dists<-dist(scaled)
+distMat<-as.matrix(dists)
+
+ids<-withAs(xx=hiv[selector,],list(
+  donor=sampleNames[xx$donor&xx$select=='UT'&xx$fluid=='PL']
+  ,donorGenital=sampleNames[xx$donor&xx$select=='UT'&xx$fluid!='PL']
+  ,donorAlpha=sampleNames[xx$donor&xx$select=='A2'&xx$fluid=='PL']
+  ,donorBeta=sampleNames[xx$donor&xx$select=='BE'&xx$fluid=='PL']
+  ,recAlpha=sampleNames[!xx$donor&xx$select=='A2'&xx$fluid=='PL']
+  ,recBeta=sampleNames[!xx$donor&xx$select=='BE'&xx$fluid=='PL']
+  ,recipient=sampleNames[!xx$donor&xx$select=='UT']
+))
+
+distList<-lapply(ids,function(xx,distMat,recipientIds){
+  select<-distMat[xx,recipientIds]
+  dists<-select[upper.tri(select)]
+  return(dists)
+},distMat,ids[['recipient']])
+distList<-distList[order(sapply(distList,mean),decreasing=TRUE)]
+
+pdf('out/dists.pdf')
+par(mar=c(7.2,4,.1,.1))
+  vpPlot(factor(rep(names(distList),sapply(distList,length)),levels=names(distList)),unlist(distList),las=3,cex=.5,col=NA,bg='#00000066',pch=21,ylab='Distance to recipient samples')
+dev.off()
+
+pdf('out/tree.pdf',height=50,width=20);par(mar=c(4,1,1,10));plot(as.dendrogram(hclust(dists)),horiz=TRUE);dev.off()
 
