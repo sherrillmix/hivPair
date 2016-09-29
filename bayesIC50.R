@@ -106,24 +106,25 @@ stanCode<-"
   }
 "
 
+assignGroups<-function(x,selector,outId=99999){
+  cladeBs<-unique(x[selector])
+  notCladeBs<-unique(x[!selector])
+  cladeBIds<-structure(c(1:length(cladeBs),rep(outId,length(notCladeBs))),.Names=c(cladeBs,notCladeBs))
+  return(cladeBIds)
+}
+groupTypes<-sapply(1:max(hiv$group),function(zz)paste(ifelse(hiv[hiv$group==zz,'fluid'][1]=='PL','PL','GE'),ifelse(hiv[hiv$group==zz,'donor'][1],'Don','Rec')))
+groupTypeIds<-structure(1:length(unique(groupTypes)),names=unique(groupTypes))
+cladeBIds<-assignGroups(hiv$Pair.ID..,hiv$Subtype=='B')
+recipientIds<-assignGroups(hiv$sample[order(hiv$Pair.ID..)],!hiv$donor[order(hiv$Pair.ID..)])
+alphaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='A2'&hiv[order(hiv$Pair.ID..),'donor'])
+betaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='BE'&hiv[order(hiv$Pair.ID..),'donor'])
+recipientAlphaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='A2'&!hiv[order(hiv$Pair.ID..),'donor'])
+recipientBetaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='BE'&!hiv[order(hiv$Pair.ID..),'donor'])
+
 fits<-lapply(names(targetCols),function(targetCol){
-  groupTypes<-sapply(1:max(hiv$group),function(zz)paste(ifelse(hiv[hiv$group==zz,'fluid'][1]=='PL','PL','GE'),ifelse(hiv[hiv$group==zz,'donor'][1],'Don','Rec')))
   #just group by donor or recipient
   #groupTypes<-sapply(1:max(hiv$group),function(zz)ifelse(hiv[hiv$group==zz,'donor'][1],'Don','Rec'))
   #note 99999 is a arbitrarily high number for non clade Bs (should never be called within Stan due to if(cladeB))
-  assignGroups<-function(x,selector,outId=99999){
-    cladeBs<-unique(x[selector])
-    notCladeBs<-unique(x[!selector])
-    cladeBIds<-structure(c(1:length(cladeBs),rep(outId,length(notCladeBs))),.Names=c(cladeBs,notCladeBs))
-    return(cladeBIds)
-  }
-  cladeBIds<-assignGroups(hiv$Pair.ID..,hiv$Subtype=='B')
-  recipientIds<-assignGroups(hiv$sample[order(hiv$Pair.ID..)],!hiv$donor[order(hiv$Pair.ID..)])
-  alphaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='A2'&hiv[order(hiv$Pair.ID..),'donor'])
-  betaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='BE'&hiv[order(hiv$Pair.ID..),'donor'])
-  recipientAlphaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='A2'&!hiv[order(hiv$Pair.ID..),'donor'])
-  recipientBetaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='BE'&!hiv[order(hiv$Pair.ID..),'donor'])
-  #dat<-withAs('xx'=hiv[hiv$select=='UT'&!is.na(hiv[,targetCol]),],list(
   dat<-withAs('xx'=hiv[!is.na(hiv[,targetCol]),],list(
     ic50=log10(xx[,targetCol]),
     N=nrow(xx),
@@ -138,7 +139,7 @@ fits<-lapply(names(targetCols),function(targetCol){
     nRecipient=sum(recipientIds<9999),
     recipientIds=recipientIds[xx$sample],
     nGroupTypes=length(unique(groupTypes)),
-    groupTypes=as.numeric(as.factor(groupTypes)),
+    groupTypes=groupTypeIds[groupTypes],
     nCladeB=sum(cladeBIds<9999),
     cladeBId=cladeBIds[as.character(xx$Pair.ID..)],
     nAlpha=sum(alphaIds<9999),
@@ -198,7 +199,13 @@ for(targetCol in names(targetCols)){
   metaRecAlpha<-sims[,'metaRecipientAlphaMu']
   indivRecBeta<-sims[,grep('recipientBetas\\[[0-9]\\]',colnames(sims))]*sims[,'metaRecipientBetaSd']+sims[,'metaRecipientBetaMu']
   metaRecBeta<-sims[,'metaRecipientBetaMu']
-  xlim<-c(-.7,2.3)
+  metaVarDonor<-log10(sims[,sprintf('metaSigmaMu[%d]',groupTypeIds['PL Don'])])
+  metaVarGenital<-log10(sims[,sprintf('metaSigmaMu[%d]',groupTypeIds['GE Don'])])
+  metaVarRec<-log10(sims[,sprintf('metaSigmaMu[%d]',groupTypeIds['PL Rec'])])
+  indivVarDonor<-log10(sims[,sprintf('sigmas[%d]',which(groupTypes=='PL Don'))]*sims[,sprintf('metaSigmaSigma[%d]',groupTypeIds['PL Don'])]+sims[,sprintf('metaSigmaMu[%d]',groupTypeIds['PL Don'])])
+  indivVarGenital<-log10(sims[,sprintf('sigmas[%d]',which(groupTypes=='GE Don'))]*sims[,sprintf('metaSigmaSigma[%d]',groupTypeIds['GE Don'])]+sims[,sprintf('metaSigmaMu[%d]',groupTypeIds['GE Don'])])
+  indivVarRec<-log10(sims[,sprintf('sigmas[%d]',which(groupTypes=='PL Rec'))]*sims[,sprintf('metaSigmaSigma[%d]',groupTypeIds['PL Rec'])]+sims[,sprintf('metaSigmaMu[%d]',groupTypeIds['PL Rec'])])
+  xlim<-c(-2.7,2.7)
   #
   bins<-seq(xlim[1],xlim[2],.01)
   indivTabs<-apply(indivRecipBeta,2,function(x)table(cut(x,bins))/length(x))
@@ -215,10 +222,16 @@ for(targetCol in names(targetCols)){
   recAlphaTabs<-table(cut(metaRecAlpha,bins))/length(metaClade)
   indivRecBetaTab<-apply(indivRecBeta,2,function(x)table(cut(x,bins))/length(x))
   recBetaTabs<-table(cut(metaRecBeta,bins))/length(metaClade)
-  
-  pdf(sprintf('out/bayes/bayes%s.pdf',targetCol))
-    par(mfrow=c(4,1),las=1,mar=c(3,3.6,1.1,.1))
-    plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.7,0),log='x',main='Individuals',xaxs='i')
+  metaVarDonorTab<-table(cut(metaVarDonor,bins))/length(metaVarDonor)
+  metaVarGenitalTab<-table(cut(metaVarGenital,bins))/length(metaVarGenital)
+  metaVarRecTab<-table(cut(metaVarRec,bins))/length(metaVarRec)
+  indivVarDonorTab<-apply(indivVarDonor,2,function(x)table(cut(x,bins))/length(x))
+  indivVarGenitalTab<-apply(indivVarGenital,2,function(x)table(cut(x,bins))/length(x))
+  indivVarRecTab<-apply(indivVarRec,2,function(x)table(cut(x,bins))/length(x))
+  #
+  pdf(sprintf('out/bayes/bayes%s.pdf',targetCol),height=9,width=6)
+    par(mfrow=c(6,1),las=1,mar=c(3,3.6,1.1,.1))
+    plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.7,0),log='x',main='Individual effects',xaxs='i')
     title(xlab=sprintf('Fold increase in %s',gsub('\n',' ',targetCols[targetCol])),mgp=c(1.5,1,0))
     meanBin<-(bins[-length(bins)]+bins[-1])/2
     apply(indivTabs,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#0000FF11',border='#0000FF44'))
@@ -226,7 +239,7 @@ for(targetCol in names(targetCols)){
     apply(indivCladeTab,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#00FF0011',border='#00FF0044'))
     abline(v=1,lty=2)
     logAxis(1,mgp=c(3,.5,0))
-    plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log="x",main='Population',xaxs='i')
+    plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log="x",main='Population effects',xaxs='i')
     title(xlab=sprintf('Fold increase in %s',gsub('\n',' ',targetCols[targetCol])),mgp=c(1.5,1,0))
     polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,metaTabs,0,0),col='#0000FF44',border='#0000FF99')
     polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,genitalTabs,0,0),col='#FF000044',border='#FF000099')
@@ -234,20 +247,36 @@ for(targetCol in names(targetCols)){
     abline(v=1,lty=2)
     legend('topleft',c('Recipient','Clade B','Genital'),fill=c('#0000FF44','#00FF0044','#FF000044'),border=c('#0000FF99','#00FF0099','#FF000099'),inset=.02)
     logAxis(1,mgp=c(3,.5,0))
-    plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log="x",main='Individuals',xaxs='i')
+    plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log="x",main='Individual selection',xaxs='i')
     title(xlab=sprintf('Fold increase in %s',gsub('\n',' ',targetCols[targetCol])),mgp=c(1.5,1,0))
     logAxis(1,mgp=c(3,.5,0))
     abline(v=1,lty=2)
     apply(indivAlphaTab,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#0000FF11',border='#0000FF44'))
     apply(indivBetaTab,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#FF000011',border='#FF000044'))
-    plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log="x",main='Population',xaxs='i')
+    apply(indivRecAlphaTab,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#00FF0011',border='#00FF0044'))
+    apply(indivRecBetaTab,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#FFD70011',border='#FFD70044'))
+    plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log="x",main='Population selection',xaxs='i')
     title(xlab=sprintf('Fold increase in %s',gsub('\n',' ',targetCols[targetCol])),mgp=c(1.5,1,0))
     logAxis(1,mgp=c(3,.5,0))
     abline(v=1,lty=2)
     polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,alphaTabs,0,0),col='#0000FF44',border='#0000FF99')
     polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,betaTabs,0,0),col='#FF000044',border='#FF000099')
     polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,recAlphaTabs,0,0),col='#00FF0044',border='#00FF0099')
-    polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,recBetaTabs,0,0),col='#00999944',border='#00999999')
+    polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,recBetaTabs,0,0),col='#FFD70099',border='#FFD70099')
+    legend('topleft',c('Alpha select','Beta select','Recipient alpha','Recipient beta'),fill=c('#0000FF44','#FF000044','#00FF0044','#FFD70044'),border=c('#0000FF99','#FF000099','#00FF0099','#FFD70099'),inset=.02)
+    plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log="x",main='Individual variance',xaxs='i')
+    title(xlab='Standard deviation',mgp=c(1.5,1,0))
+    logAxis(1,mgp=c(3,.5,0))
+    apply(indivVarDonorTab,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#0000FF11',border='#0000FF44'))
+    apply(indivVarGenitalTab,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#FF000011',border='#FF000044'))
+    apply(indivVarRecTab,2,function(xx)polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,xx,0,0),col='#00FF0011',border='#00FF0044'))
+    plot(1,1,type='n',xlim=10^xlim,ylim=range(indivTabs,metaTabs),xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log="x",main='Population variance',xaxs='i')
+    title(xlab='Standard deviation',mgp=c(1.5,1,0))
+    logAxis(1,mgp=c(3,.5,0))
+    polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,metaVarDonorTab,0,0),col='#0000FF44',border='#0000FF99')
+    polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,metaVarGenitalTab,0,0),col='#FF000044',border='#FF000099')
+    polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,metaVarRecTab,0,0),col='#00FF0044',border='#00FF0099')
+    legend('topleft',c('Donor','Genital','Recipient'),fill=c('#0000FF44','#FF000044','#00FF0044'),border=c('#0000FF99','#FF000099','#00FF0099'),inset=.02)
   dev.off()
 
 }
