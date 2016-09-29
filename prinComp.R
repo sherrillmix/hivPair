@@ -29,5 +29,11 @@ pdf('out/pca.pdf')
     selectSelector<-hiv[selector,'select']==ii
     points(pcaPoints[selectSelector,],bg=cols[as.character(hiv[selector,'donor'])][selectSelector],pch=pch[hiv[selector,'fluid']][selectSelector],col=col[selectSelector])
   }
+  legend('bottomleft',c('Genital','Plasma','IFNa2 select','IFNb select','Donor','Recipient'),pch=c(21,22,rep(21,4)),col=c('#00000055','#00000055','red','black','#00000055','#00000055'),pt.bg=rep(cols[c('TRUE','FALSE')],c(5,1)),inset=.01)
   #plot(pca)
 dev.off()
+
+scaled<-apply(hiv[selector,names(targetCols)],2,function(x)(x-mean(x))/sd(x))
+rownames(scaled)<-withAs(hiv=hiv[selector,],paste(hiv$sampleFluidSelect,ave(hiv$sampleFluidSelect,hiv$sampleFluidSelect,FUN=function(x)1:length(x))))
+pdf('out/tree.pdf',height=50,width=20);par(mar=c(4,1,1,10));plot(as.dendrogram(hclust(dist(scaled))),horiz=TRUE);dev.off()
+
