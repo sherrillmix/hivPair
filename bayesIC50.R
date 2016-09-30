@@ -83,16 +83,16 @@ stanCode<-"
     }
   }
   model {
-    metaSigmaMu ~ gamma(2,.5);
-    metaSigmaSigma ~ gamma(2,.5);
-    metaDonorSd ~ gamma(2,.5);
-    metaRecipientSd ~ gamma(2,.5);
-    metaGenitalSd ~ gamma(2,.5);
-    metaCladeSd ~ gamma(2,.5);
-    metaAlphaSd ~ gamma(2,.5);
-    metaBetaSd ~ gamma(2,.5);
-    metaRecipientAlphaSd ~ gamma(2,.5);
-    metaRecipientBetaSd ~ gamma(2,.5);
+    metaSigmaMu ~ gamma(1,2);
+    metaSigmaSigma ~ gamma(1,2);
+    metaDonorSd ~ gamma(1,2);
+    metaRecipientSd ~ gamma(1,2);
+    metaGenitalSd ~ gamma(1,2);
+    metaCladeSd ~ gamma(1,2);
+    metaAlphaSd ~ gamma(1,2);
+    metaBetaSd ~ gamma(1,2);
+    metaRecipientAlphaSd ~ gamma(1,2);
+    metaRecipientBetaSd ~ gamma(1,2);
     donors ~ normal(0,1);
     recipients ~ normal(0,1);
     genitals ~ normal(0,1);
@@ -152,7 +152,7 @@ fits<-lapply(names(targetCols),function(targetCol){
     recipientBetaIds=recipientBetaIds[xx$sampleSelect],
     isBeta=as.numeric(xx$select=='BE')
   ))
-  fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=50000, chains=nThreads,thin=25,control=list(adapt_delta=.99))
+  fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=50000, chains=nThreads,thin=25,control=list(adapt_delta=.999,stepsize=.01))
   return(list('fit'=fit,'dat'=dat))
 })
 names(fits)<-names(targetCols)
