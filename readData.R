@@ -20,11 +20,11 @@ hiv$sampleFluidSelect<-paste(hiv$donorRec,hiv$Pair.ID..,hiv$fluid,hiv$select)
 hiv$fluidSelectDonor<-paste(ifelse(hiv$donor,'DO','RE'),hiv$fluid,hiv$select)
 hiv$seqId<-sprintf('seq%d',1:nrow(hiv))
 hiv$baseName<-sub('\\..*$','',hiv$Renamed)
+hiv$isGenital<-hiv$fluid!='PL'
 donors<-with(hiv[hiv$donor,],tapply(baseName,Pair.ID..,unique))
 recs<-with(hiv[!hiv$donor,],tapply(baseName,Pair.ID..,unique))
 pairNames<-mapply(function(x,y)paste(paste(x,collapse='/'),paste(y,collapse='/'),sep='-'),donors,recs)
 write.fa(hiv$seqId,hiv$seq,'hiv.fa')
-hiv$group<-as.numeric(as.factor(hiv$sampleFluid))
 
 #deal with column name case inconsistency
 colnames(hiv)<-sub('\\.donor\\.','.Donor.',colnames(hiv))
@@ -100,5 +100,6 @@ targetCols<-c(
 )
 targetColLog<-structure(rep(TRUE,length(targetCols)),names=names(targetCols))
 targetColLog['Replicative.capacity.Pooled.Donor.cells.p24.d7']<-FALSE
+goodTargetCols<-targetCols[1:5]
 
 

@@ -1,8 +1,8 @@
 library(vipor)
 if(!exists('hiv'))source('readData.R')
 
-selector<-!apply(is.na(hiv[,names(targetCols)]),1,any)
-pca<-prcomp(hiv[selector,names(targetCols)],scale.=TRUE)
+selector<-!apply(is.na(hiv[,names(goodTargetCols)]),1,any)
+pca<-prcomp(hiv[selector,names(goodTargetCols)],scale.=TRUE)
 pcaPoints<-t(t(pca$x)/pca$sdev/sqrt(nrow(pca$x))) #figure out the point positions based on scores scaled by standard deviations
 importance<-summary(pca)$importance[2,]
 
@@ -28,7 +28,7 @@ pdf('out/pca.pdf')
   #plot(pca)
 dev.off()
 
-scaled<-apply(hiv[selector,names(targetCols)],2,function(x)(x-mean(x))/sd(x))
+scaled<-apply(hiv[selector,names(goodTargetCols)],2,function(x)(x-mean(x))/sd(x))
 sampleNames<-withAs(xx=hiv[selector,],paste(xx$sampleFluidSelect,ave(xx$sampleFluidSelect,xx$sampleFluidSelect,FUN=function(x)1:length(x))))
 rownames(scaled)<-sampleNames
 dists<-dist(scaled)
