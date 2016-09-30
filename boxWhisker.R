@@ -54,4 +54,16 @@ for(targetCol in names(targetCols)){
 }
 
 
+for(targetCol in names(targetCols)){
+  selector<-!is.na(hiv[,targetCol])
+  pos<-seq(-.2,.2,length.out=max(hiv$Pair.ID..))
+  catPos<-structure(1:length(unique(hiv$fluidSelectDonor)),names=unique(hiv$fluidSelectDonor))
+  pdf(sprintf('out/boxWhisker/7line_%s.pdf',targetCol))
+    plot(1,1,type='n',xlim=c(.5,length(unique(hiv$fluidSelectDonor))),ylim=range(hiv[selector,targetCol]),ylab=targetCols[targetCol],log='y')
+    xPos<-catPos[hiv[selector,'fluidSelectDonor']]+pos[hiv[selector,'Pair.ID..']]
+    #segments(xPos,min(hiv[selector,targetCol]),xPos,max(hiv[selector,targetCol]))
+    points(xPos,hiv[selector,targetCol])
+  dev.off()
+}
+
 
