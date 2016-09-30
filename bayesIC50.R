@@ -106,20 +106,28 @@ stanCode<-"
   }
 "
 
-assignGroups<-function(x,selector,outId=99999){
+assignGroups<-function(x,selector=rep(TRUE,length(x)),outId=99999){
   cladeBs<-unique(x[selector])
   notCladeBs<-unique(x[!selector])
   cladeBIds<-structure(c(1:length(cladeBs),rep(outId,length(notCladeBs))),.Names=c(cladeBs,notCladeBs))
   return(cladeBIds)
 }
-groupTypes<-sapply(1:max(hiv$group),function(zz)paste(ifelse(hiv[hiv$group==zz,'fluid'][1]=='PL','PL','GE'),ifelse(hiv[hiv$group==zz,'donor'][1],'Don','Rec')))
-groupTypeIds<-structure(1:length(unique(groupTypes)),names=unique(groupTypes))
 cladeBIds<-assignGroups(hiv$Pair.ID..,hiv$Subtype=='B')
 recipientIds<-assignGroups(hiv$sample[order(hiv$Pair.ID..)],!hiv$donor[order(hiv$Pair.ID..)])
 alphaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='A2'&hiv[order(hiv$Pair.ID..),'donor'])
 betaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='BE'&hiv[order(hiv$Pair.ID..),'donor'])
 recipientAlphaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='A2'&!hiv[order(hiv$Pair.ID..),'donor'])
 recipientBetaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='BE'&!hiv[order(hiv$Pair.ID..),'donor'])
+
+#stick recipient beta/alpha treated with untreated variance
+#stick beta treated genital in beta treated plasma
+hiv$group<-paste(hiv$sample,ifelse(hiv$isGenital,ifelse(hiv$select=='BE','PL',ifelse(hiv$isGenital,'GE','PL')),'PL'),ifelse(hiv$donor,hiv$select,'UT'))
+hiv$groupType<-paste(ifelse(hiv$donor,'Donor','Recipient'),ifelse(hiv$select=='BE','PL',ifelse(hiv$isGenital,'GE','PL')),ifelse(hiv$donor,hiv$select,'UT'))
+groupIds<-assignGroups(hiv$group[order(hiv$Pair.ID..,hiv$sampleFluid)],rep(TRUE,nrow(hiv)))
+groupTypeIds<-assignGroups(hiv$groupType[order(hiv$Pair.ID..,hiv$sampleFluid)],rep(TRUE,nrow(hiv)))
+groupTypes<-sapply(names(groupIds),function(x)hiv[hiv$group==x,'groupType'][1])
+#groupTypes<-sub('^(Donor|Recipient)-?[0-9]? [0-9]+ ','\\1 ',names(groupIds))
+#groupTypeIds<-structure(hiv$groupTypes,names=unique(groupTypes))
 
 fits<-lapply(names(targetCols),function(targetCol){
   #just group by donor or recipient
@@ -132,13 +140,13 @@ fits<-lapply(names(targetCols),function(targetCol){
     isGenital=as.integer(xx$fluid!='PL'),
     nGenital=max(xx[xx$fluid!='PL','Pair.ID..']),
     isRecipient=as.integer(!xx$donor),
-    nGroup=max(xx$group),
-    groupIds=xx$group,
+    nGroup=max(groupIds),
+    groupIds=groupIds[xx$group],
     nPair=max(xx$Pair.ID..),
     pairIds=xx$Pair.ID..,
     nRecipient=sum(recipientIds<9999),
     recipientIds=recipientIds[xx$sample],
-    nGroupTypes=length(unique(groupTypes)),
+    nGroupTypes=length(unique(xx$groupType)),
     groupTypes=groupTypeIds[groupTypes],
     nCladeB=sum(cladeBIds<9999),
     cladeBId=cladeBIds[as.character(xx$Pair.ID..)],
@@ -152,12 +160,13 @@ fits<-lapply(names(targetCols),function(targetCol){
     recipientBetaIds=recipientBetaIds[xx$sampleSelect],
     isBeta=as.numeric(xx$select=='BE')
   ))
-  fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=50000, chains=nThreads,thin=25,control=list(adapt_delta=.999,stepsize=.01))
+  fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=100000, chains=nThreads,thin=25,control=list(adapt_delta=.999,stepsize=.01))
   return(list('fit'=fit,'dat'=dat))
 })
 names(fits)<-names(targetCols)
 
 for(targetCol in names(targetCols)){
+  message(targetCol)
   fit<-fits[[targetCol]][['fit']]
   dat<-fits[[targetCol]][['dat']]
   #
@@ -278,7 +287,6 @@ for(targetCol in names(targetCols)){
     polygon(10^c(xlim[1],meanBin,xlim[2],xlim[1]),c(0,metaVarRecTab,0,0),col='#00FF0044',border='#00FF0099')
     legend('topleft',c('Donor','Genital','Recipient'),fill=c('#0000FF44','#FF000044','#00FF0044'),border=c('#0000FF99','#FF000099','#00FF0099'),inset=.02)
   dev.off()
-
 }
 
 
