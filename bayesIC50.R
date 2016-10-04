@@ -194,8 +194,18 @@ cachedTabs<-cacheOperation('work/stanTabs.Rdat',lapply,names(targetCols),functio
   converted<-cbind(converted,sims[,c('metaRecipientMu','metaGenitalMu','metaCladeMu','metaAlphaMu','metaBetaMu','metaRecipientAlphaMu','metaRecipientBetaMu',sprintf('metaSigmaMu[%d]',1:max(dat$groupTypes)))])
   converted[,grep('^(sigmas|metaSigmaMu)\\[[0-9]+\\]',colnames(converted))]<-log10(converted[,grep('^(sigmas|metaSigmaMu)\\[[0-9]+\\]',colnames(converted))])
   stats<-apply(converted,2,function(x)c('mean'=mean(x),quantile(x,c(.025,.05,.95,.975)),'gt0'=mean(x>0),'lt0'=mean(x<0),n=length(x)))
+  stats2<-c(
+    'p(beta>alpha)'=mean(converted[,'metaBetaMu']>converted[,'metaAlphaMu']),
+    'p(|recipient-beta|<|recipient-alpha|)'=mean(abs(converted[,'metaRecipientMu']-converted[,'metaBetaMu'])<abs(converted[,'metaRecipientMu']-converted[,'metaAlphaMu'])),
+    'p(recipient>beta)'=mean(converted[,'metaRecipientMu']>converted[,'metaBetaMu']),
+    'p(recipient>alpha)'=mean(converted[,'metaRecipientMu']>converted[,'metaAlphaMu']),
+    'p(beta<alpha)'=mean(converted[,'metaBetaMu']<converted[,'metaAlphaMu']),
+    'p(|recipient-beta|>|recipient-alpha|)'=mean(abs(converted[,'metaRecipientMu']-converted[,'metaBetaMu'])>abs(converted[,'metaRecipientMu']-converted[,'metaAlphaMu'])),
+    'p(recipient>beta)'=mean(converted[,'metaRecipientMu']>converted[,'metaBetaMu']),
+    'p(recipient>alpha)'=mean(converted[,'metaRecipientMu']>converted[,'metaAlphaMu']),
+  )
   tabbed<-apply(converted,2,function(x)table(cut(x,bins))/length(x))
-  return(list('tabs'=tabbed,'stats'=stats))
+  return(list('tabs'=tabbed,'stats'=stats,'stats2'=stats2))
 })
 names(cachedTabs)<-names(targetCols)
 
@@ -207,6 +217,7 @@ for(targetCol in names(targetCols)){
   dat<-fits[[targetCol]][['dat']]
   tabs<-cachedTabs[[targetCol]][['tabs']]
   stats<-cachedTabs[[targetCol]][['stats']]
+  stats2<-cachedTabs[[targetCol]][['stats2']]
   outStats<-as.data.frame(t(stats[,c('metaRecipientMu','metaGenitalMu','metaCladeMu','metaAlphaMu','metaBetaMu')]))
   outStats$mean<-10^outStats$mean
   outStats$'95% CrI'<-sprintf('%s-%s',sapply(signif(10^outStats[,'2.5%'],digits=3),formatC,digits=3,format='fg',flag='#'),sapply(signif(10^outStats[,'97.5%'],digits=3),formatC,digits=3,format='fg',flag='#'))
@@ -215,6 +226,9 @@ for(targetCol in names(targetCols)){
   outStats$'p(effect<=1)'<-format(1-outStats$gt0,digits=3)
   outStats[outStats$gt0==1,'p(effect<=1)']<-sprintf("<%s",format(1/outStats[outStats$gt0==1,'n'],digits=1,scientific=FALSE))
   write.csv(outStats[,c('mean','95% CrI','90% CrI','p(effect<=1)')],sprintf('out/bayes/stats_%s.csv',targetCol))
+  outStats2<-data.frame('probability'=stats2)
+  outStats2[outStats2$probability==0,'probability']<-sprintf("<%s",format(1/outStats[1,'n'],digits=1,scientific=FALSE))
+  write.csv(outStats2,sprintf('out/bayes/stats2_%s.csv',targetCol))
   #
   recipientCols<-grep('recipients\\[[0-9]+\\]',colnames(tabs))
   genitalCols<-grep('genitals\\[[0-9]+\\]',colnames(tabs))
