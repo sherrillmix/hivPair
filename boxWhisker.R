@@ -41,7 +41,7 @@ for(targetCol in names(targetCols)){
   write.csv(plotInfo,sprintf('out/boxWhisker/%s.csv',targetCol))
   pdf(sprintf('out/boxWhisker/%s.pdf',targetCol),height=5,width=5)
     par(mar=c(5.4,3,.3,.1))
-    isLog<-targetColLog[targetCol]
+    isLog<-targetColTransform[targetCol]=='log'
     print(isLog)
     plot(1,1,type='n',xlab='',ylab=targetCols[targetCol],xlim=c(1,nrow(plotInfo)),ylim=range(plotInfo),xaxt='n',mgp=c(2,1,0),las=1,log=ifelse(isLog,'y',''),yaxt=ifelse(isLog,'n','s'))
     if(isLog)logAxis(2,las=1)
@@ -60,6 +60,7 @@ for(targetCol in names(targetCols)){
   catPos<-structure(1:length(unique(hiv$fluidSelectDonor)),names=unique(hiv$fluidSelectDonor))
   pdf(sprintf('out/boxWhisker/7line_%s.pdf',targetCol))
     plot(1,1,type='n',xlim=c(.5,length(unique(hiv$fluidSelectDonor))),ylim=range(hiv[selector,targetCol]),ylab=targetCols[targetCol],log='y')
+    ranges<-do.call(rbind,tapply(hiv[selector,targetCol],hiv[selector,'fluidSelectDonor'],range))
     xPos<-catPos[hiv[selector,'fluidSelectDonor']]+pos[hiv[selector,'Pair.ID..']]
     #segments(xPos,min(hiv[selector,targetCol]),xPos,max(hiv[selector,targetCol]))
     points(xPos,hiv[selector,targetCol])

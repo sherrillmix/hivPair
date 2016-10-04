@@ -98,8 +98,9 @@ targetCols<-c(
   'p24.release.With.IFNa..500.U.ml....'='p24 release with IFNa2',
   'p24.release.No.IFN....'='p24 release without IFNa2'
 )
-targetColLog<-structure(rep(TRUE,length(targetCols)),names=names(targetCols))
-targetColLog['Replicative.capacity.Pooled.Donor.cells.p24.d7']<-FALSE
+targetColTransform<-structure(rep('log',length(targetCols)),names=names(targetCols))
+targetColLog['Replicative.capacity.Pooled.Donor.cells.p24.d7']<-'identity'
+targetColLog[grep('p24.release.',names(targetColLog))]<-'logit'
 goodTargetCols<-targetCols[1:5]
 
 
