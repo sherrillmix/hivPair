@@ -144,7 +144,7 @@ if(!exists('fits')){
     }else if(thisTransform=='logit'){
       transformFunc<-function(x)logit(x/100)
     } else if(thisTransform=='identity'){
-      transFormFunc<-function(x)x
+      transformFunc<-function(x)x
     }else{
       stop(simpleError('Unknown tranform'))
     }
