@@ -96,11 +96,14 @@ targetCols<-c(
   'IFNbeta.Pooled.Donor.cells.IC50..pg.ml.'='IFNbeta IC50 (pg/ml)',
   'IFNa2.Pooled.Donor.cells.IC50..pg..ml.'='IFNa2 IC50 (pg/ml)',
   'p24.release.With.IFNa..500.U.ml....'='p24 release with IFNa2',
-  'p24.release.No.IFN....'='p24 release without IFNa2'
+  'p24.release.No.IFN....'='p24 release without IFNa2',
+  'Autologous.IC50'='Autologous IC50'
 )
 targetColTransform<-structure(rep('log',length(targetCols)),names=names(targetCols))
-targetColLog['Replicative.capacity.Pooled.Donor.cells.p24.d7']<-'identity'
-targetColLog[grep('p24.release.',names(targetColLog))]<-'logit'
+targetColTransform['Replicative.capacity.Pooled.Donor.cells.p24.d7']<-'identity'
+targetColTransform[grep('p24.release.',names(targetColTransform))]<-'logit'
+targetColCensorDown<-structure(rep(NA,length(targetCols)),names=names(targetCols))
+targetColCensorDown['Autologous.IC50']<-20
 goodTargetCols<-targetCols[1:5]
 
 
