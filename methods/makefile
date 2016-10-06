@@ -1,2 +1,2 @@
-methods.pdf:
+methods.pdf: methods.tex
 	pdflatex methods.tex
