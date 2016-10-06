@@ -1,6 +1,7 @@
 library('rstan')
 library('dnar')
 library('vioplot')
+library('png') #for raster inside pdf
 
 logit<-function(p)log(p)-log(1-p)
 invLogit<-function(x)exp(x)/(exp(x)+1)
@@ -204,7 +205,7 @@ convertCols<-function(cols,means,sds,sims){
 }
 
 cachedTabs<-cacheOperation('work/stanTabs.Rdat',lapply,names(targetCols),function(targetCol){
-  if(targetColTransform[targetCol]=='identity') xlim<-c(-200,300)
+  if(targetColTransform[targetCol]=='identity') xlim<-c(-420,530)
   else xlim<-c(-2.7,2.7)
   bins<-seq(xlim[1],xlim[2],length.out=200)
   message(targetCol)
@@ -225,12 +226,12 @@ cachedTabs<-cacheOperation('work/stanTabs.Rdat',lapply,names(targetCols),functio
   stats2<-c(
     'p(beta>alpha)'=mean(converted[,'metaBetaMu']>converted[,'metaAlphaMu']),
     'p(|recipient-beta|<|recipient-alpha|)'=mean(abs(converted[,'metaRecipientMu']-converted[,'metaBetaMu'])<abs(converted[,'metaRecipientMu']-converted[,'metaAlphaMu'])),
-    'p(recipient>beta)'=mean(converted[,'metaRecipientMu']>converted[,'metaBetaMu']),
     'p(recipient>alpha)'=mean(converted[,'metaRecipientMu']>converted[,'metaAlphaMu']),
+    'p(recipient>beta)'=mean(converted[,'metaRecipientMu']>converted[,'metaBetaMu']),
     'p(beta<alpha)'=mean(converted[,'metaBetaMu']<converted[,'metaAlphaMu']),
     'p(|recipient-beta|>|recipient-alpha|)'=mean(abs(converted[,'metaRecipientMu']-converted[,'metaBetaMu'])>abs(converted[,'metaRecipientMu']-converted[,'metaAlphaMu'])),
-    'p(recipient>beta)'=mean(converted[,'metaRecipientMu']>converted[,'metaBetaMu']),
-    'p(recipient>alpha)'=mean(converted[,'metaRecipientMu']>converted[,'metaAlphaMu'])
+    'p(recipient<alpha)'=mean(converted[,'metaRecipientMu']<converted[,'metaAlphaMu']),
+    'p(recipient<beta)'=mean(converted[,'metaRecipientMu']<converted[,'metaBetaMu'])
   )
   tabbed<-apply(converted,2,function(x)table(cut(x,bins))/length(x))
   return(list('tabs'=tabbed,'stats'=stats,'stats2'=stats2,'bins'=bins))
@@ -246,11 +247,13 @@ for(targetCol in names(targetCols)){
     addAxis<-function()axis(1,pretty(xlim))
     transform<-function(x)x
     logX<-''
+    xlab<-sprintf('Increase in %s',gsub('\n',' ',targetCols[targetCol]))
   }
   else{
     addAxis<-function()logAxis(1,mgp=c(3,.5,0))
     transform<-function(x)10^x
     logX<-'x'
+    xlab<-sprintf('Fold increase in %s',gsub('\n',' ',targetCols[targetCol]))
   }
   #
   fit<-fits[[targetCol]][['fit']]
@@ -268,7 +271,9 @@ for(targetCol in names(targetCols)){
   rownames(outStats)<-c('Recipient fold change','Genital fold change','Clade B fold change','Alpha selection fold change','Beta selection fold change','Recipient alpha selection fold change','Recipient beta selection fold change')
   outStats$'p(effect<=1)'<-format(1-outStats$gt0,digits=3)
   outStats[outStats$gt0==1,'p(effect<=1)']<-sprintf("<%s",format(1/outStats[outStats$gt0==1,'n'],digits=1,scientific=FALSE))
-  write.csv(outStats[,c('mean','95% CrI','90% CrI','p(effect<=1)')],sprintf('out/bayes/stats_%s.csv',targetCol))
+  output<-outStats[,c('mean','95% CrI','90% CrI','p(effect<=1)')]
+  if(targetColTransform[targetCol]=='identity')colnames(output)[colnames(output)=='p(effect<=1)']<-'p(effect<=0)'
+  write.csv(output,sprintf('out/bayes/stats_%s.csv',targetCol))
   outStats2<-data.frame('probability'=stats2)
   outStats2[outStats2$probability==0,'probability']<-sprintf("<%s",format(1/outStats[1,'n'],digits=1,scientific=FALSE))
   write.csv(outStats2,sprintf('out/bayes/stats2_%s.csv',targetCol))
@@ -288,7 +293,7 @@ for(targetCol in names(targetCols)){
     par(mfrow=c(6,1),las=1,mar=c(3,3.6,1.1,.1))
     ylims<-c(0,max(tabs[,c(colnames(tabs)[c(recipientCols,cladeCols,genitalCols,alphaCols,betaCols)],'metaRecipientMu','metaGenitalMu','metaCladeMu','metaAlphaMu','metaBetaMu')]))
     plot(1,1,type='n',xlim=transform(xlim),ylim=ylims,xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.7,0),log=logX,main='Individual effects',xaxs='i')
-    title(xlab=sprintf('Fold increase in %s',gsub('\n',' ',targetCols[targetCol])),mgp=c(1.5,1,0))
+    title(xlab=xlab,mgp=c(1.5,1,0))
     meanBin<-(bins[-length(bins)]+bins[-1])/2
     apply(tabs[,recipientCols],2,function(xx)polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,xx,0,0),col='#0000FF11',border='#0000FF44'))
     apply(tabs[,genitalCols],2,function(xx)polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,xx,0,0),col='#FF000011',border='#FF000044'))
@@ -296,7 +301,7 @@ for(targetCol in names(targetCols)){
     abline(v=1,lty=2)
     addAxis()
     plot(1,1,type='n',xlim=transform(xlim),ylim=ylims,xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log=logX,main='Population effects',xaxs='i')
-    title(xlab=sprintf('Fold increase in %s',gsub('\n',' ',targetCols[targetCol])),mgp=c(1.5,1,0))
+    title(xlab=xlab,mgp=c(1.5,1,0))
     polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,tabs[,'metaRecipientMu'],0,0),col='#0000FF44',border='#0000FF99')
     polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,tabs[,'metaGenitalMu'],0,0),col='#FF000044',border='#FF000099')
     polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,tabs[,'metaCladeMu'],0,0),col='#00FF0044',border='#00FF0099')
@@ -304,7 +309,7 @@ for(targetCol in names(targetCols)){
     legend('topleft',c('Recipient','Clade B','Genital'),fill=c('#0000FF44','#00FF0044','#FF000044'),border=c('#0000FF99','#00FF0099','#FF000099'),inset=.02)
     addAxis()
     plot(1,1,type='n',xlim=transform(xlim),ylim=ylims,xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log=logX,main='Individual selection',xaxs='i')
-    title(xlab=sprintf('Fold increase in %s',gsub('\n',' ',targetCols[targetCol])),mgp=c(1.5,1,0))
+    title(xlab=xlab,mgp=c(1.5,1,0))
     addAxis()
     abline(v=1,lty=2)
     apply(tabs[,alphaCols],2,function(xx)polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,xx,0,0),col='#0000FF11',border='#0000FF44'))
@@ -312,7 +317,7 @@ for(targetCol in names(targetCols)){
     apply(tabs[,recAlphaCols],2,function(xx)polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,xx,0,0),col='#00FF0011',border='#00FF0044'))
     apply(tabs[,recBetaCols],2,function(xx)polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,xx,0,0),col='#FFD70011',border='#FFD70044'))
     plot(1,1,type='n',xlim=transform(xlim),ylim=ylims,xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log=logX,main='Population selection',xaxs='i')
-    title(xlab=sprintf('Fold increase in %s',gsub('\n',' ',targetCols[targetCol])),mgp=c(1.5,1,0))
+    title(xlab=xlab,mgp=c(1.5,1,0))
     addAxis()
     abline(v=1,lty=2)
     polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,tabs[,'metaRecipientMu'],0,0),col='#00000022',border='#00000099',lty=2)
@@ -337,7 +342,7 @@ for(targetCol in names(targetCols)){
   dev.off()
 }
 
-mclapply(names(targetCols),function(targetCol){
+check<-mclapply(names(targetCols),function(targetCol){
   message(targetCol)
   fit<-fits[[targetCol]][['fit']]
   dat<-fits[[targetCol]][['dat']]
@@ -350,18 +355,31 @@ mclapply(names(targetCols),function(targetCol){
   indivSdCols<-sprintf('indivSigma[%d]',1:dat[['N']])
   simFits<-mapply(function(mu,sigma)rnorm(nrow(sims),sims[,mu],sims[,sigma]),indivMuCols,indivSdCols,SIMPLIFY=FALSE)
   #
-  pdf(sprintf('out/bayes/fit%s.pdf',targetCol),width=20,height=20)
-    print(plot(fit,pars=allPars))
+  tmp<-tempfile()
+  png(file=tmp,width=3000,height=3000,res=150)
     print(traceplot(fit,pars=allPars))
+  dev.off()
+  tmp2<-tempfile()
+  png(file=tmp2,width=3000,height=3000,res=150)
     par(mar=c(4,5,2,0))
     plot(1,1,type='n',xlim=c(1,dat[['N']])+c(-1,1),ylim=range(unlist(simFits)),xlab='Virus ID',ylab=sprintf('Log10 %s',targetCols[targetCol]),xaxs='i',cex.axis=1.5,cex.lab=2,main='Posterior predictive distributions',cex.main=2)
     do.call(vioplot,c('x'=list(simFits[[1]]),simFits[-1],'add'=list(TRUE),'colMed'=list(NA),'col'=list('#00000033')))
-    #points(rep(1:length(simFits),sapply(simFits,length)),unlist(simFits),pch='.',col='#00000033')
     points(1:length(dat[['ic50']]),dat[['ic50']],col='red',pch='+',lwd=2)
+  dev.off()
+  pdf(sprintf('out/bayes/fit%s.pdf',targetCol),width=20,height=20)
+    print(plot(fit,pars=allPars))
+    #use rasters for file size
+    par(mai=c(0,0,0,0))
+    plot(c(0,1),c(0,1),type="n")
+    rasterImage(readPNG(tmp),0,0,1,1)
+    plot(c(0,1),c(0,1),type="n")
+    rasterImage(readPNG(tmp2),0,0,1,1)
     #pairs(fit,pars=c("metaSigmaMu","metaSigmaSigma", "sigmas"))
     #pairs(fit,pars=c("genitals","metaGenitalMu","metaGenitalSd"))
     #pairs(fit,pars=c("recipients","metaRecipientMu","metaRecipientSd"))
     #pairs(fit,pars=c("clades","metaCladeMu","metaCladeSd"))
     #pairs(fit,pars=c("donors","metaDonorMu","metaDonorSd"))
   dev.off()
+  file.remove(tmp)
+  file.remove(tmp2)
 },mc.cores=3)
