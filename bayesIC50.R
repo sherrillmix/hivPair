@@ -185,12 +185,12 @@ if(!exists('fits')){
       #multiply by a small amount to avoid any floating point weirdness with comparison 
       stanCode<-gsub(
         'ic50 ~ normal\\(indivMu,indivSigma\\);',
-        sprintf('for (ii in 1:N){\nif(ic50[ii]<= %f)target+=normal_lcdf(%f|indivMu,indivSigma);\nelse ic50[ii] ~ normal(indivMu,indivSigma); \n}',cutVal*(1+1e-6),cutVal),
+        sprintf('for (ii in 1:N){\nif(ic50[ii]<= %f)target+=normal_lcdf(%f|indivMu[ii],indivSigma[ii]);\nelse ic50[ii] ~ normal(indivMu[ii],indivSigma[ii]); \n}',cutVal*(1+1e-6),cutVal),
         stanCode
       )
     }
     fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=100000, chains=nThreads,thin=25,control=list(adapt_delta=.999,stepsize=.01))
-    return(list('fit'=fit,'dat'=dat))
+    return(list('fit'=fit,'dat'=dat,stan=stanCode))
   })
   names(fits)<-names(targetCols)
 }
