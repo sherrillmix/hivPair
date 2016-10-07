@@ -57,13 +57,16 @@ for(targetCol in names(targetCols)){
 for(targetCol in names(targetCols)){
   selector<-!is.na(hiv[,targetCol])
   pos<-seq(-.2,.2,length.out=max(hiv$Pair.ID..))
-  catPos<-structure(1:length(unique(hiv$fluidSelectDonor)),names=unique(hiv$fluidSelectDonor))
+  catPos<-structure(1:length(unique(hiv$fluidSelectDonor)),names=unique(hiv$fluidSelectDonor[order(hiv$donor,hiv$fluid,hiv$select=='PL',decreasing=TRUE)]))
   pdf(sprintf('out/boxWhisker/7line_%s.pdf',targetCol))
-    plot(1,1,type='n',xlim=c(.5,length(unique(hiv$fluidSelectDonor))),ylim=range(hiv[selector,targetCol]),ylab=targetCols[targetCol],log='y')
+    plot(1,1,type='n',xlim=c(.5,length(unique(hiv$fluidSelectDonor))),ylim=range(hiv[selector,targetCol]),ylab=targetCols[targetCol],log='y',las=1,xaxt='n',yaxt='n',xlab='')
+    logAxis(2)
+    axis(1,catPos,names(catPos),las=2)
     ranges<-do.call(rbind,tapply(hiv[selector,targetCol],hiv[selector,'fluidSelectDonor'],range))
     xPos<-catPos[hiv[selector,'fluidSelectDonor']]+pos[hiv[selector,'Pair.ID..']]
-    #segments(xPos,min(hiv[selector,targetCol]),xPos,max(hiv[selector,targetCol]))
-    points(xPos,hiv[selector,targetCol])
+    ranges<-do.call(rbind,tapply(hiv[selector,targetCol],xPos,range))
+    segments(as.numeric(rownames(ranges)),ranges[,1],as.numeric(rownames(ranges)),ranges[,2],col='#00000044')
+    points(xPos,hiv[selector,targetCol],cex=.5,pch=21,col=NA,bg='#00000088')
   dev.off()
 }
 
