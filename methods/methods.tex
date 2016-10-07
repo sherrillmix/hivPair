@@ -52,6 +52,9 @@ where pair$_i$ indicates the pair identity of the $i^\text{th}$ observation, $\m
 
 For a trio where one donor transmitted viruses to two separate recipients, recipient parameters were estimated independently for each recipient.
 
+In Autologous IC50, observations less than equal to 20 were censored at 20 (the maximum amount of plasma tolerated by the cells). To model this, the probability of these observations was considered to be:
+\(p(\text{IC50}=20)=\int_{-\infty}^{\log(20)}N(\mu_i,\sigma^2_i)\)
+
 The coefficients $\beta$ for each pair $j$ come from population-level normal hyperpriors:
 \begin{align*}
 \text{base}_{j} & \sim  N(\mu_{\text{base}},\sigma^2_{\text{base}})\\
