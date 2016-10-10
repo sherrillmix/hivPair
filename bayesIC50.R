@@ -174,6 +174,7 @@ if(!exists('fits')){
       recipientAlphaIds=recipientAlphaIds[xx$sampleSelect],
       nRecipientBeta=sum(recipientBetaIds<9999),
       recipientBetaIds=recipientBetaIds[xx$sampleSelect],
+      isBeta=as.numeric(xx$select=='BE') #don't actually use this but keeping in for now for caching
     ))
     #R makes local copy so we don't have to worry about overwrite global stanCode
     if(thisTransform=='identity'){
