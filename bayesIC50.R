@@ -220,8 +220,11 @@ cachedTabs<-cacheOperation('work/stanTabs.Rdat',lapply,names(targetCols),functio
     list('metaRecipientSd','metaGenitalSd','metaCladeSd','metaAlphaSd','metaBetaSd','metaRecipientAlphaSd','metaRecipientBetaSd',sprintf('metaSigmaSigma[%d]',dat$groupTypes)),
     sims
   )
-  converted<-cbind(converted,sims[,c('metaRecipientMu','metaGenitalMu','metaCladeMu','metaAlphaMu','metaBetaMu','metaRecipientAlphaMu','metaRecipientBetaMu',sprintf('metaSigmaMu[%d]',1:max(dat$groupTypes)))])
+  converted<-cbind(converted,sims[,c('metaDonorMu','metaRecipientMu','metaGenitalMu','metaCladeMu','metaAlphaMu','metaBetaMu','metaRecipientAlphaMu','metaRecipientBetaMu',sprintf('metaSigmaMu[%d]',1:max(dat$groupTypes)))])
   converted[,grep('^(sigmas|metaSigmaMu)\\[[0-9]+\\]',colnames(converted))]<-log10(converted[,grep('^(sigmas|metaSigmaMu)\\[[0-9]+\\]',colnames(converted))])
+  donorFolds<-converted[,colnames(converted)[-grep('\\[',colnames(converted))]]/converted[,'metaDonorMu']
+  colnames(donorFolds)<-sprintf('fold_%s',colnames(donorFolds))
+  converted<-cbind(converted,donorFolds)
   stats<-apply(converted,2,function(x)c('mean'=mean(x),quantile(x,c(.025,.05,.95,.975)),'gt0'=mean(x>0),'lt0'=mean(x<0),n=length(x)))
   stats2<-c(
     'p(beta>alpha)'=mean(converted[,'metaBetaMu']>converted[,'metaAlphaMu']),
@@ -264,11 +267,24 @@ for(targetCol in names(targetCols)){
   bins<-cachedTabs[[targetCol]][['bins']]
   xlim<-range(bins)
   #
-  outStats<-as.data.frame(t(stats[,c('metaRecipientMu','metaGenitalMu','metaCladeMu','metaAlphaMu','metaBetaMu','metaRecipientAlphaMu','metaRecipientBetaMu')]))
+  outStatCols<-c(
+    'Recipient fold change'='metaRecipientMu',
+    'Genital fold change'='metaGenitalMu',
+    'Clade B fold change'='metaCladeMu',
+    'Alpha selection fold change'='metaAlphaMu',
+    'Beta selection fold change'='metaBetaMu',
+    'Recipient alpha selection fold change'='metaRecipientAlphaMu',
+    'Recipient beta selection fold change'='metaRecipientBetaMu'
+  )
+  if(targetColTransform[targetCol]=='identity'){
+    folds<-sprintf('fold_%s',outStatCols)
+    names(outStatCols)<-sub('fold ','',names(outStatCols))
+    outStatCols<-c(outStatCols,folds)
+  }
+  outStats<-as.data.frame(t(stats[,outStatCols]))
   outStats$mean<-transform(outStats$mean)
   outStats$'95% CrI'<-sprintf('%s-%s',sapply(signif(transform(outStats[,'2.5%']),digits=3),formatC,digits=3,format='fg',flag='#'),sapply(signif(transform(outStats[,'97.5%']),digits=3),formatC,digits=3,format='fg',flag='#'))
   outStats$'90% CrI'<-sprintf('%s-%s',sapply(signif(transform(outStats[,'5%']),digits=3),formatC,digits=3,format='fg',flag='#'),sapply(signif(transform(outStats[,'95%']),digits=3),formatC,digits=3,format='fg',flag='#'))
-  rownames(outStats)<-c('Recipient fold change','Genital fold change','Clade B fold change','Alpha selection fold change','Beta selection fold change','Recipient alpha selection fold change','Recipient beta selection fold change')
   outStats$'p(effect<=1)'<-format(1-outStats$gt0,digits=3)
   outStats[outStats$gt0==1,'p(effect<=1)']<-sprintf("<%s",format(1/outStats[outStats$gt0==1,'n'],digits=1,scientific=FALSE))
   output<-outStats[,c('mean','95% CrI','90% CrI','p(effect<=1)')]
