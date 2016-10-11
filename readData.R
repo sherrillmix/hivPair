@@ -101,7 +101,7 @@ targetCols<-c(
   'Bnaber.IC50'='Bnaber IC50'
 )
 targetColTransform<-structure(rep('log',length(targetCols)),names=names(targetCols))
-targetColTransform['Replicative.capacity.Pooled.Donor.cells.p24.d7']<-'identity'
+#targetColTransform['Replicative.capacity.Pooled.Donor.cells.p24.d7']<-'identity'
 targetColTransform[grep('p24.release.',names(targetColTransform))]<-'logit'
 targetColCensorDown<-structure(rep(NA,length(targetCols)),names=names(targetCols))
 targetColCensorDown['Autologous.IC50']<-20
