@@ -10,7 +10,8 @@ out<-mclapply(names(targetCols),function(targetCol){
   selector<-hiv$donor&!is.na(hiv[,targetCol])
   unadjustTarget<-log2(hiv[selector,targetCol])
   target<-unadjustTarget-log2(ave(hiv[selector,targetCol],hiv[selector,'Pair.ID..'],FUN=function(x)mean(x,na.rm=TRUE)))
-  fitAlpha<-cv.glmnet(modelMatrix[selector,][!is.na(target),],target[!is.na(target)],nfolds=sum(!is.na(target)),grouped=FALSE)
+  fitAlpha<-cv.glmnet(modelMatrix[selector,],target,nfolds=length(target),grouped=FALSE)
+  fitAlpha2<-cv.glmnet(modelMatrix[selector,],unadjustTarget,nfolds=length(target),grouped=FALSE)
   #fitBeta<-cv.glmnet(modelMatrix[hiv$donor&!is.na(hiv$IFNbeta.PD.IC50..ng.ml.),],log2(hiv$IFNbeta.PD.IC50..ng.ml.[hiv$donor&!is.na(hiv$IFNbeta.PD.IC50..ng.ml.)]),nfolds=sum(hiv$donor&!is.na(hiv$IFNbeta.PD.IC50..ng.ml.)),grouped=FALSE)
   multiFit<-lapply(unique(hiv$Pair.ID..),function(xx){
     pairSelect<-hiv[selector,'Pair.ID..']==xx
@@ -19,6 +20,19 @@ out<-mclapply(names(targetCols),function(targetCol){
   })
   names(multiFit)<-unique(hiv$Pair.ID..)
   pdf(sprintf('out/lasso/%s.pdf',targetCol))
+  plotGlmnet(fitAlpha2,markBest1SE=TRUE,main=targetCols[targetCol])
+  plotBetas(fitAlpha2$glmnet.fit,ylab=targetCols[targetCol],transformFunc=function(x)2^x,labelLambda=fitAlpha$lambda.1se)
+  coefs<-coef(fitAlpha2)
+  coefs<-coefs[coefs[,1]!=0,]
+  coefs<-coefs[names(coefs)!="(Intercept)"]
+  cols<-rainbow.lab(length(unique(hiv$Pair.ID..)),alpha=.7)
+  names(cols)<-unique(hiv$Pair.ID..)
+  if(length(coefs)>0){
+    for(ii in names(coefs)){
+      vpPlot(modelInput[selector,sub('[A-Z]$','',ii)],target,col=NA,bg=cols[as.character(hiv$Pair.ID..[selector])],pch=21,main=sprintf('%s: %0.3f',ii,coefs[ii]),ylab=sprintf('Mean adjusted %s (log)',targetCol))
+      legend('topleft',names(cols),pt.bg=cols,pch=21,col=NA)
+    }
+  }
   plotGlmnet(fitAlpha,markBest1SE=TRUE,main=targetCols[targetCol])
   plotBetas(fitAlpha$glmnet.fit,ylab=targetCols[targetCol],transformFunc=function(x)2^x,labelLambda=fitAlpha$lambda.1se)
   #plotGlmnet(fitBeta,markBest1SE=TRUE,main='IFN beta IC50')
@@ -30,7 +44,7 @@ out<-mclapply(names(targetCols),function(targetCol){
   names(cols)<-unique(hiv$Pair.ID..)
   if(length(coefs)>0){
     for(ii in names(coefs)){
-      vpPlot(modelInput[selector,sub('[A-Z]$','',ii)][!is.na(target)],target[!is.na(target)],col=NA,bg=cols[as.character(hiv$Pair.ID..[selector])],pch=21,main=sprintf('%s: %0.3f',ii,coefs[ii]),ylab=sprintf('Mean adjusted %s (log)',targetCol))
+      vpPlot(modelInput[selector,sub('[A-Z]$','',ii)],target,col=NA,bg=cols[as.character(hiv$Pair.ID..[selector])],pch=21,main=sprintf('%s: %0.3f',ii,coefs[ii]),ylab=sprintf('Mean adjusted %s (log)',targetCol))
       legend('topleft',names(cols),pt.bg=cols,pch=21,col=NA)
     }
   }
