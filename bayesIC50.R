@@ -206,7 +206,7 @@ convertCols<-function(cols,means,sds,sims){
 
 cachedTabs<-cacheOperation('work/stanTabs.Rdat',lapply,names(targetCols),function(targetCol){
   if(targetColTransform[targetCol]=='identity') xlim<-c(-420,530)
-  else xlim<-c(-2.7,2.7)
+  else xlim<-c(-1.2,2.5)
   bins<-seq(xlim[1],xlim[2],length.out=200)
   message(targetCol)
   fit<-fits[[targetCol]][['fit']]
