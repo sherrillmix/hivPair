@@ -267,6 +267,17 @@ for(targetCol in names(targetCols)){
   bins<-cachedTabs[[targetCol]][['bins']]
   xlim<-range(bins)
   #
+  recipientCols<-grep('recipients\\[[0-9]+\\]',colnames(tabs))
+  genitalCols<-grep('genitals\\[[0-9]+\\]',colnames(tabs))
+  cladeCols<-grep('clades\\[[0-9]+\\]',colnames(tabs))
+  alphaCols<-grep('alphas\\[[0-9]+\\]',colnames(tabs))
+  betaCols<-grep('betas\\[[0-9]+\\]',colnames(tabs))
+  recAlphaCols<-grep('recipientAlphas\\[[0-9]\\]',colnames(tabs))
+  recBetaCols<-grep('recipientBetas\\[[0-9]\\]',colnames(tabs))
+  metaVarCols<-structure(sprintf('metaSigmaMu[%d]',groupTypeIds),names=names(groupTypeIds))
+  varCols<-sprintf('sigmas[%d]',1:max(dat$groupIds))
+  varColsByGroup<-tapply(varCols,groupTypes,c)
+  #
   outStatCols<-c(
     'Recipient fold change'='metaRecipientMu',
     'Genital fold change'='metaGenitalMu',
@@ -294,17 +305,18 @@ for(targetCol in names(targetCols)){
   outStats2<-data.frame('probability'=stats2)
   outStats2[outStats2$probability==0,'probability']<-sprintf("<%s",format(1/outStats[1,'n'],digits=1,scientific=FALSE))
   write.csv(outStats2,sprintf('out/bayes/stats2_%s.csv',targetCol))
+  pairs<-t(stats[,c(recipientCols,genitalCols,cladeCols,alphaCols,betaCols,recAlphaCols,recBetaCols)])
   #
-  recipientCols<-grep('recipients\\[[0-9]+\\]',colnames(tabs))
-  genitalCols<-grep('genitals\\[[0-9]+\\]',colnames(tabs))
-  cladeCols<-grep('clades\\[[0-9]+\\]',colnames(tabs))
-  alphaCols<-grep('alphas\\[[0-9]+\\]',colnames(tabs))
-  betaCols<-grep('betas\\[[0-9]+\\]',colnames(tabs))
-  recAlphaCols<-grep('recipientAlphas\\[[0-9]\\]',colnames(tabs))
-  recBetaCols<-grep('recipientBetas\\[[0-9]\\]',colnames(tabs))
-  metaVarCols<-structure(sprintf('metaSigmaMu[%d]',groupTypeIds),names=names(groupTypeIds))
-  varCols<-sprintf('sigmas[%d]',1:max(dat$groupIds))
-  varColsByGroup<-tapply(varCols,groupTypes,c)
+  tmp<-cladeBIds
+  names(tmp)<-sprintf('Clade %s',names(cladeBIds))
+  #just using genitals directly since first 3 were genitals but really should use an id for genital instead
+  tmp2<-structure(1:100,names=sprintf('Genital %d',1:100))
+  converts<-list('recipients'=recipientIds,'clades'=tmp,'alphas'=alphaIds,'betas'=betaIds,'recipientAlphas'=recipientAlphaIds,'recipientBetas'=recipientBetaIds,'genitals'=tmp2)
+  for(ii in names(converts)){
+    regex<-sprintf('%s\\[([0-9]+)\\]',ii)
+    rownames(pairs)[grep(regex,rownames(pairs))]<-sapply(as.numeric(sub(regex,'\\1',rownames(pairs)[grep(regex,rownames(pairs))])),function(xx)names(converts[[ii]])[converts[[ii]]==xx])
+  }
+  write.csv(pairs,sprintf('out/bayes/pairStats_%s.csv',targetCol))
   #
   pdf(sprintf('out/bayes/bayes%s.pdf',targetCol),height=9,width=6)
     par(mfrow=c(6,1),las=1,mar=c(3,3.6,1.1,.1))
