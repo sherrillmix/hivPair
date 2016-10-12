@@ -45,7 +45,7 @@ for(targetCol in names(targetCols)){
     isLog<-targetColTransform[targetCol]=='log'
     print(isLog)
     plot(1,1,type='n',xlab='',ylab=targetCols[targetCol],xlim=c(1,nrow(plotInfo)),ylim=range(plotInfo,na.rm=TRUE),xaxt='n',mgp=c(2,1,0),las=1,log=ifelse(isLog,'y',''),yaxt=ifelse(isLog,'n','s'))
-    if(isLog)logAxis(2,las=1)
+    if(isLog)logAxis(2,las=1,mgp=c(3,.5,0))
     segments(1:nrow(plotInfo),plotInfo$max,1:nrow(plotInfo),plotInfo$min)
     rect(1:nrow(plotInfo)-.2,plotInfo$upperQuart,1:nrow(plotInfo)+.2,plotInfo$lowerQuart)
     means<-plotInfo[,ifelse(isLog,'geoMean','mean')]
