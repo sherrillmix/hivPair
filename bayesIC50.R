@@ -285,6 +285,7 @@ for(targetCol in names(targetCols)){
   outStats$mean<-transform(outStats$mean)
   outStats$'95% CrI'<-sprintf('%s-%s',sapply(signif(transform(outStats[,'2.5%']),digits=3),formatC,digits=3,format='fg',flag='#'),sapply(signif(transform(outStats[,'97.5%']),digits=3),formatC,digits=3,format='fg',flag='#'))
   outStats$'90% CrI'<-sprintf('%s-%s',sapply(signif(transform(outStats[,'5%']),digits=3),formatC,digits=3,format='fg',flag='#'),sapply(signif(transform(outStats[,'95%']),digits=3),formatC,digits=3,format='fg',flag='#'))
+  rownames(outStats)<-names(outStatCols)
   outStats$'p(effect<=1)'<-format(1-outStats$gt0,digits=3)
   outStats[outStats$gt0==1,'p(effect<=1)']<-sprintf("<%s",format(1/outStats[outStats$gt0==1,'n'],digits=1,scientific=FALSE))
   output<-outStats[,c('mean','95% CrI','90% CrI','p(effect<=1)')]
