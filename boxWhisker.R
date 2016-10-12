@@ -43,8 +43,15 @@ for(targetCol in names(targetCols)){
   pdf(sprintf('out/boxWhisker/%s.pdf',targetCol),height=5,width=5)
     par(mar=c(5.4,3,.3,.1))
     isLog<-targetColTransform[targetCol]=='log'
-    print(isLog)
-    plot(1,1,type='n',xlab='',ylab=targetCols[targetCol],xlim=c(1,nrow(plotInfo)),ylim=range(plotInfo,na.rm=TRUE),xaxt='n',mgp=c(2,1,0),las=1,log=ifelse(isLog,'y',''),yaxt=ifelse(isLog,'n','s'))
+    ylim<-range(plotInfo,na.rm=TRUE)
+    if(diff(log10(ylim))<1){
+      print(targetCol)
+      print(ylim)
+      if(log10(ylim[1])%%1<1-log10(ylim[2])%%1)ylim[1]<-10^floor(log10(ylim[1]))
+      else ylim[2]<-10^ceiling(log10(ylim[2]))
+      print(ylim)
+    }
+    plot(1,1,type='n',xlab='',ylab=targetCols[targetCol],xlim=c(1,nrow(plotInfo)),ylim=ylim,xaxt='n',mgp=c(2,1,0),las=1,log=ifelse(isLog,'y',''),yaxt=ifelse(isLog,'n','s'))
     if(isLog)logAxis(2,las=1,mgp=c(3,.5,0))
     segments(1:nrow(plotInfo),plotInfo$max,1:nrow(plotInfo),plotInfo$min)
     rect(1:nrow(plotInfo)-.2,plotInfo$upperQuart,1:nrow(plotInfo)+.2,plotInfo$lowerQuart)
