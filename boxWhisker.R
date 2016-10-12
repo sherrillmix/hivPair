@@ -45,11 +45,8 @@ for(targetCol in names(targetCols)){
     isLog<-targetColTransform[targetCol]=='log'
     ylim<-range(plotInfo,na.rm=TRUE)
     if(diff(log10(ylim))<1){
-      print(targetCol)
-      print(ylim)
       if(log10(ylim[1])%%1<1-log10(ylim[2])%%1)ylim[1]<-10^floor(log10(ylim[1]))
       else ylim[2]<-10^ceiling(log10(ylim[2]))
-      print(ylim)
     }
     plot(1,1,type='n',xlab='',ylab=targetCols[targetCol],xlim=c(1,nrow(plotInfo)),ylim=ylim,xaxt='n',mgp=c(2,1,0),las=1,log=ifelse(isLog,'y',''),yaxt=ifelse(isLog,'n','s'))
     if(isLog)logAxis(2,las=1,mgp=c(3,.5,0))
