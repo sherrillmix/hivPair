@@ -1,10 +1,10 @@
 library(glmnet)
 library(glmnetPlotR)
-if(!exists('hiv'))source('readData.R')
+if(!exists('onlyDiffAA'))source('parseSeqs.R')
 
 out<-mclapply(names(targetCols),function(targetCol){
   message(targetCol)
-  modelInput<-as.data.frame(onlyDiffAA)
+  modelInput<-as.data.frame(onlyDiffAA,onlyDiff)
   #modelInput$pair<-as.factor(hiv$Pair.ID..)
   modelMatrix<-model.matrix(formula(sprintf('~ %s',paste(colnames(modelInput),collapse='+'))),modelInput)
   selector<-hiv$donor&!is.na(hiv[,targetCol])
@@ -29,7 +29,7 @@ out<-mclapply(names(targetCols),function(targetCol){
   names(cols)<-unique(hiv$Pair.ID..)
   if(length(coefs)>0){
     for(ii in names(coefs)){
-      vpPlot(modelInput[selector,sub('[A-Z]$','',ii)],target,col=NA,bg=cols[as.character(hiv$Pair.ID..[selector])],pch=21,main=sprintf('%s: %0.3f',ii,coefs[ii]),ylab=sprintf('Mean adjusted %s (log)',targetCol))
+      vpPlot(modelInput[selector,sub('[A-Z]$','',ii)],unadjustTarget,col=NA,bg=cols[as.character(hiv$Pair.ID..[selector])],pch=21,main=sprintf('%s: %0.3f',ii,coefs[ii]),ylab=sprintf('Mean adjusted %s (log)',targetCol))
       legend('topleft',names(cols),pt.bg=cols,pch=21,col=NA)
     }
   }
