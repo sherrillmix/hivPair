@@ -139,7 +139,7 @@ if(!exists('fits')){
     #groupTypes<-sapply(1:max(hiv$group),function(zz)ifelse(hiv[hiv$group==zz,'donor'][1],'Don','Rec'))
     #note 99999 is a arbitrarily high number for non clade Bs (should never be called within Stan due to if(cladeB))
     thisTransform<-targetColTransform[targetCol]
-    thisCensorDown<-targetColCensorDown[targetCol]
+    thisCensorDown<-targetColCensorDown[[targetCol]]
     if(thisTransform=='log'){
       transformFunc<-log10 
     }else if(thisTransform=='logit'){
@@ -180,14 +180,16 @@ if(!exists('fits')){
     if(thisTransform=='identity'){
       stanCode<-gsub('~ *gamma\\([0-9,]+\\)','~ gamma(2,.01)',stanCode)
     }
-    if(!is.na(thisCensorDown)){
+    if(!is.null(thisCensorDown)){
       cutVal<-transformFunc(thisCensorDown)
       #multiply by a small amount to avoid any floating point weirdness with comparison 
-      stanCode<-gsub(
+      stanCode<-sub(
         'ic50 ~ normal\\(indivMu,indivSigma\\);',
-        sprintf('for (ii in 1:N){\nif(ic50[ii]<= %f)target+=normal_lcdf(%f|indivMu[ii],indivSigma[ii]);\nelse ic50[ii] ~ normal(indivMu[ii],indivSigma[ii]); \n}',cutVal*(1+1e-6),cutVal),
+        sprintf('for (ii in 1:N){\nif(ic50[ii]<= censorDown[ii]*(1+1e-6))target+=normal_lcdf(censorDown[ii]|indivMu[ii],indivSigma[ii]);\nelse ic50[ii] ~ normal(indivMu[ii],indivSigma[ii]); \n}'),
         stanCode
       )
+      stanCode<-sub('real ic50\\[N\\];','real ic50[N];\nreal censorDown[N];',stanCode)
+      dat<-c(dat,list('censorDown'=cutVal))
     }
     fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=100000, chains=nThreads,thin=25,control=list(adapt_delta=.999,stepsize=.01))
     return(list('fit'=fit,'dat'=dat,stan=stanCode))
