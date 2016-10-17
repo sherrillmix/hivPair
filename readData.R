@@ -76,5 +76,5 @@ if(any(is.na(hiv$vresCensor)))stop(simpleError('Unknown vres censoring'))
 hiv$minVres<-.1/hiv$IFN.beta.expt.Replicative.capacity..p24...d7.ng.ml.*100
 hiv$isMinVres<-round(hiv$vres,2)<=round(hiv$minVres,2)
 
-if(any(hiv$vres<hiv$minVres))stop(simpleError('Vres < min Vres'))
+if(any(round(hiv$vres,5)<round(hiv$minVres)))stop(simpleError('Vres < min Vres'))
 if(any(round(hiv$vres,5)<=round(hiv$minVres,5)&!hiv$vresCensor))stop(simpleError('Vres == min Vres and not censored'))
