@@ -44,6 +44,25 @@ write.csv(hiv[,c('Renamed','Original.name','Pair.ID..','select','Replicative.cap
 
 source('readVarGlyco.R')
 
+#Read in precise vres values to figure out which are censored
+vresPrecise<-read.csv('data/Vres data for Scott.csv',stringsAsFactors=FALSE)
+vresPrecise<-vresPrecise[apply(is.na(vresPrecise),1,sum)==0,]
+rownames(vresPrecise)<-vresPrecise$Renamed
+vresPrecise$isCensor<-vresPrecise$IFN.beta.Pooled.Donor.p24.at.0.44.pg.ml==.1
+vresPrecise$vres<-vresPrecise$IFN.beta.Pooled.Donor.p24.at.0.44.pg.ml/vresPrecise$IFN.beta.expt.Replicative.capacity..p24...d7.ng.ml.*100
+hiv$vres<-vresPrecise[hiv$Renamed,'vres']
+hiv$vresCensor<-vresPrecise[hiv$Renamed,'isCensor']
+if(any(is.na(hiv$vres)))stop(simpleError('Unknown vres censoring'))
+if(any(is.na(hiv$vresCensor)))stop(simpleError('Unknown vres censoring'))
+
+hiv$minVres<-.1/hiv$IFN.beta.expt.Replicative.capacity..p24...d7.ng.ml.*100
+hiv$isMinVres<-round(hiv$vres,2)<=round(hiv$minVres,2)
+IFN.beta.Pooled.Donor.Vres.at.0.44.pg.ml...UT.
+if(any(round(hiv$vres,5)<round(hiv$minVres)))stop(simpleError('Vres < min Vres'))
+if(any(round(hiv$vres,5)<=round(hiv$minVres,5)&!hiv$vresCensor))stop(simpleError('Vres == min Vres and not censored'))
+if(any(round(hiv$vres,5)>round(hiv$minVres,5)*1.02&hiv$vresCensor))stop(simpleError('Vres > min Vres and censored'))
+hiv[(round(hiv$vres,5)>round(hiv$minVres,5)*1.03&hiv$vresCensor),c('minVres','vres')]
+
 targetCols<-c(
   'Env.RT'='Env/RT',
   'Infectivity.RLU.pg.RT...T1249.'='Infectivity (RLU/pg RT)',
@@ -53,28 +72,16 @@ targetCols<-c(
   'p24.release.With.IFNa..500.U.ml....'='p24 release with IFNa2',
   'p24.release.No.IFN....'='p24 release without IFNa2',
   'Autologous.IC50'='Autologous IC50',
-  'Bnaber.IC50'='Bnaber IC50'
+  'Bnaber.IC50'='Bnaber IC50',
+  'vres'='IFNbeta Vres'
 )
 targetColTransform<-structure(rep('log',length(targetCols)),names=names(targetCols))
 #targetColTransform['Replicative.capacity.Pooled.Donor.cells.p24.d7']<-'identity'
 targetColTransform[grep('p24.release.',names(targetColTransform))]<-'logit'
+targetColTransform[names(targetColTransform)=='vres']<-'logit'
 targetColCensorDown<-structure(rep(NA,length(targetCols)),names=names(targetCols))
 targetColCensorDown['Autologous.IC50']<-20
 targetColCensorDown['Bnaber.IC50']<-20
 goodTargetCols<-targetCols[1:5]
 
-#Read in precise vres values to figure out which are censored
-vresPrecise<-read.csv('data/Vres data for Scott.csv',stringsAsFactors=FALSE)
-vresPrecise<-vresPrecise[apply(is.na(vresPrecise),1,sum)==0,]
-rownames(vresPrecise)<-vresPrecise$Renamed
-vresPrecise$isCensor<-vresPrecise$IFN.beta.Pooled.Donor.p24.at.0.44.pg.ml==.1
-hiv$vres<-vresPrecise[hiv$Renamed,'IFN.beta.Pooled.Donor.Vres.at.0.44.pg.ml...UT.']
-hiv$vresCensor<-vresPrecise[hiv$Renamed,'isCensor']
-if(any(is.na(hiv$vres)))stop(simpleError('Unknown vres censoring'))
-if(any(is.na(hiv$vresCensor)))stop(simpleError('Unknown vres censoring'))
 
-hiv$minVres<-.1/hiv$IFN.beta.expt.Replicative.capacity..p24...d7.ng.ml.*100
-hiv$isMinVres<-round(hiv$vres,2)<=round(hiv$minVres,2)
-
-if(any(round(hiv$vres,5)<round(hiv$minVres)))stop(simpleError('Vres < min Vres'))
-if(any(round(hiv$vres,5)<=round(hiv$minVres,5)&!hiv$vresCensor))stop(simpleError('Vres == min Vres and not censored'))
