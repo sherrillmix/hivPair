@@ -208,6 +208,7 @@ convertCols<-function(cols,means,sds,sims){
 
 cachedTabs<-cacheOperation('work/stanTabs.Rdat',lapply,names(targetCols),function(targetCol){
   if(targetColTransform[targetCol]=='identity') xlim<-c(-420,530)
+  else if(targetCol=='vres')xlim<-c(-1.2,7.2)
   else xlim<-c(-1.2,2.5)
   bins<-seq(xlim[1],xlim[2],length.out=200)
   message(targetCol)
@@ -259,6 +260,7 @@ for(targetCol in names(targetCols)){
     transform<-function(x)10^x
     logX<-'x'
     xlab<-sprintf('Fold increase in %s',gsub('\n',' ',targetCols[targetCol]))
+    if(targetColTransform[targetCol]=='logit')xlab<-sprintf('%s odds ratio',xlab)
   }
   #
   fit<-fits[[targetCol]][['fit']]
