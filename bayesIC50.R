@@ -181,7 +181,7 @@ if(!exists('fits')){
       stanCode<-gsub('~ *gamma\\([0-9,]+\\)','~ gamma(2,.01)',stanCode)
     }
     if(!is.null(thisCensorDown)){
-      cutVal<-transformFunc(thisCensorDown)
+      cutVal<-transformFunc(thisCensorDown[!is.na(hiv[,targetCol])])
       #multiply by a small amount to avoid any floating point weirdness with comparison 
       stanCode<-sub(
         'ic50 ~ normal\\(indivMu,indivSigma\\);',
