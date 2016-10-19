@@ -8,24 +8,23 @@ pca<-prcomp(tmp,scale.=TRUE)
 pcaPoints<-t(t(pca$x)/pca$sdev/sqrt(nrow(pca$x))) #figure out the point positions based on scores scaled by standard deviations
 importance<-summary(pca)$importance[2,]
 
-cols<-rainbow.lab(length(unique(hiv$donor)),alpha=.8)
-names(cols)<-unique(hiv$donor)
-pch<-structure(c(21,22,22),names=c('PL','SE','CV'))
-col=ifelse(hiv[selector,'select']=='BE','black',ifelse(hiv[selector,'select']=='A2','red','#00000055'))
+cols<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.6)
+#pch<-structure(c(21,22,22),names=c('PL','SE','CV'))
+pch<-structure(c(21,21,21),names=c('PL','SE','CV'))
+#col=ifelse(hiv[selector,'select']=='BE','black',ifelse(hiv[selector,'select']=='A2','red','#00000055'))
+cols2<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.8)
+names(cols)<-names(cols2)<-sort(unique(hiv$fluidSelectDonor))
 
 pdf('out/pca.pdf')
   for(select in list(1:2,2:3,3:4,4:5)){
     plot(
       1,1,type='n',las=1,
-      xlim=range(pcaPoints[,select]),ylim=range(pcaPoints[,select]),
+      xlim=range(pcaPoints[,select[1]]),ylim=range(pcaPoints[,select[2]]),
       xlab=sprintf('Principal component %d (%d%% of variance)',select[1],round(importance[select[1]]*100)),
       ylab=sprintf('Principal component %d (%d%% of variance)',select[2],round(importance[select[2]]*100))
     )
-    for(ii in c('UT','A2','BE')){
-      selectSelector<-hiv[selector,'select']==ii
-      points(pcaPoints[selectSelector,select],bg=cols[as.character(hiv[selector,'donor'])][selectSelector],pch=pch[hiv[selector,'fluid']][selectSelector],col=col[selectSelector])
-    }
-    legend('bottomleft',c('Genital','Plasma','IFNa2 select','IFNb select','Donor','Recipient'),pch=c(22,21,rep(21,4)),col=c('#00000055','#00000055','red','black','#00000055','#00000055'),pt.bg=rep(cols[c('TRUE','FALSE')],c(5,1)),inset=.01)
+    points(pcaPoints[,select],bg=cols[as.character(hiv[selector,'fluidSelectDonor'])],col=cols2[as.character(hiv[selector,'fluidSelectDonor'])],pch=21)
+    legend('bottomleft',names(cols),pch=21,col=cols2,pt.bg=cols,inset=.01)
     biplot(pca,choices=select,cex=.25)
   }
 dev.off()
