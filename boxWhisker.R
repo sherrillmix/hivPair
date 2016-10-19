@@ -59,12 +59,12 @@ for(targetCol in names(targetCols)){
 }
 
 
-cols<-rainbow.lab(length(unique(hiv$Pair.ID..)),alpha=.2)
-cols2<-rainbow.lab(length(unique(hiv$Pair.ID..)),alpha=.7)
-names(cols)<-names(cols2)<-unique(hiv$Pair.ID..)
+cols<-rainbow.lab(length(unique(hiv$Pair.ID)),alpha=.2)
+cols2<-rainbow.lab(length(unique(hiv$Pair.ID)),alpha=.7)
+names(cols)<-names(cols2)<-unique(hiv$Pair.ID)
 for(targetCol in names(targetCols)){
   selector<-!is.na(hiv[,targetCol])
-  pos<-seq(-.3,.3,length.out=max(hiv$Pair.ID..))
+  pos<-seq(-.3,.3,length.out=max(hiv$Pair.ID))
   catPos<-structure(1:length(unique(hiv$fluidSelectDonor)),names=unique(hiv$fluidSelectDonor[order(hiv$donor,hiv$fluid=='PL',hiv$select=='UT',hiv$select=='A2',decreasing=TRUE)]))
   pdf(sprintf('out/boxWhisker/7line_%s.pdf',targetCol),width=8)
     par(mar=c(5,5,.1,.1))
@@ -73,11 +73,15 @@ for(targetCol in names(targetCols)){
     axis(1,catPos,names(catPos),las=2)
     rect(seq(1.5,max(catPos),2),10^par('usr')[3],seq(2.5,max(catPos)+.5,2),10^par('usr')[4],col='#00000011',border=NA)
     ranges<-do.call(rbind,tapply(hiv[selector,targetCol],hiv[selector,'fluidSelectDonor'],range))
-    xPos<-catPos[hiv[selector,'fluidSelectDonor']]+pos[hiv[selector,'Pair.ID..']]
+    xPos<-catPos[hiv[selector,'fluidSelectDonor']]+pos[hiv[selector,'Pair.ID']]
     ranges<-do.call(rbind,tapply(hiv[selector,targetCol],xPos,range))
     segments(as.numeric(rownames(ranges)),ranges[,1],as.numeric(rownames(ranges)),ranges[,2],col='#00000033')
-    points(xPos+offsetX(log10(hiv[selector,targetCol]),xPos,width=.04),hiv[selector,targetCol],cex=.5,pch=21,col=NA,bg=cols2[hiv[selector,'Pair.ID..']])
+    points(xPos+offsetX(log10(hiv[selector,targetCol]),xPos,width=.04),hiv[selector,targetCol],cex=.5,pch=21,col=NA,bg=cols2[hiv[selector,'Pair.ID']])
   dev.off()
 }
 
+exp(mean(log(hiv[hiv$baseName=='CH492'&hiv$select=='A2'&hiv$fluid=='PL','IFNa2.Pooled.Donor.cells.IC50..pg..ml'])))/
+exp(mean(log(hiv[hiv$baseName=='CH492'&hiv$select=='UT'&hiv$fluid=='PL','IFNa2.Pooled.Donor.cells.IC50..pg..ml'])))
 
+exp(mean(log(hiv[hiv$baseName=='CH492'&hiv$select=='BE'&hiv$fluid=='PL','IFNbeta.Pooled.Donor.cells.IC50..pg.ml'])))/
+exp(mean(log(hiv[hiv$baseName=='CH492'&hiv$select=='UT'&hiv$fluid=='PL','IFNbeta.Pooled.Donor.cells.IC50..pg.ml'])))

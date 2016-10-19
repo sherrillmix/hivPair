@@ -59,7 +59,7 @@ par(mar=c(7.2,4,.1,.1))
   vpPlot(factor(rep(names(distList),sapply(distList,length)),levels=names(distList)),unlist(distList),las=3,cex=.5,col=NA,bg='#00000066',pch=21,ylab='Distance to recipient samples')
 dev.off()
 
-pairRecDist<-unlist(ave(split(cbind(scaled,withAs(xx=hiv[selector,],!xx$donor&xx$fluid=='PL'&xx$select=='UT')),1:nrow(scaled)),hiv[selector,'Pair.ID..'],FUN=function(df){
+pairRecDist<-unlist(ave(split(cbind(scaled,withAs(xx=hiv[selector,],!xx$donor&xx$fluid=='PL'&xx$select=='UT')),1:nrow(scaled)),hiv[selector,'Pair.ID'],FUN=function(df){
   df<-do.call(rbind,df)
   select<-df[,ncol(df)]==1
   df<-df[,-ncol(df)]
@@ -72,13 +72,13 @@ recipientCentroid<-apply(scaled[withAs(xx=hiv[selector,],!xx$donor&xx$fluid=='PL
 recipientDiff<-t(t(scaled)-recipientCentroid)
 recipientDist<-apply(recipientDiff^2,1,sum)
 
-cols<-rainbow.lab(length(unique(hiv$Pair.ID..)),alpha=.7)
-names(cols)<-sort(unique(hiv$Pair.ID..))
+cols<-rainbow.lab(length(unique(hiv$Pair.ID)),alpha=.7)
+names(cols)<-sort(unique(hiv$Pair.ID))
 pdf('out/centroidDist.pdf')
   par(mar=c(5.2,4,.1,.1))
-  vpPlot(factor(hiv[selector,'fluidSelectDonor'],levels=unique(hiv$fluidSelectDonor[order(hiv$donor,hiv$select=='UT',hiv$fluid=='PL',hiv$select=='A2',decreasing=TRUE)])),recipientDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair.ID..'])],pch=21,ylab='Distance to recipient samples centroid',las=2)
+  vpPlot(factor(hiv[selector,'fluidSelectDonor'],levels=unique(hiv$fluidSelectDonor[order(hiv$donor,hiv$select=='UT',hiv$fluid=='PL',hiv$select=='A2',decreasing=TRUE)])),recipientDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair.ID'])],pch=21,ylab='Distance to recipient samples centroid',las=2)
   legend('topright',names(cols),pch=21,pt.bg=cols,col=NA,inset=.01,title='Pair',ncol=2)
-  vpPlot(factor(hiv[selector,'fluidSelectDonor'],levels=unique(hiv$fluidSelectDonor[order(hiv$donor,hiv$select=='UT',hiv$fluid=='PL',hiv$select=='A2',decreasing=TRUE)])),pairRecDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair.ID..'])],pch=21,ylab='Distance to within-pair recipient centroid',las=2)
+  vpPlot(factor(hiv[selector,'fluidSelectDonor'],levels=unique(hiv$fluidSelectDonor[order(hiv$donor,hiv$select=='UT',hiv$fluid=='PL',hiv$select=='A2',decreasing=TRUE)])),pairRecDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair.ID'])],pch=21,ylab='Distance to within-pair recipient centroid',las=2)
   legend('topright',names(cols),pch=21,pt.bg=cols,col=NA,inset=.01,title='Pair',ncol=2)
 dev.off()
 

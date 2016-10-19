@@ -114,19 +114,19 @@ assignGroups<-function(x,selector=rep(TRUE,length(x)),outId=99999){
   cladeBIds<-structure(c(1:length(cladeBs),rep(outId,length(notCladeBs))),.Names=c(cladeBs,notCladeBs))
   return(cladeBIds)
 }
-cladeBIds<-assignGroups(hiv$Pair.ID..,hiv$Subtype=='B')
-recipientIds<-assignGroups(hiv$sample[order(hiv$Pair.ID..)],!hiv$donor[order(hiv$Pair.ID..)])
-alphaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='A2'&hiv[order(hiv$Pair.ID..),'donor'])
-betaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='BE'&hiv[order(hiv$Pair.ID..),'donor'])
-recipientAlphaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='A2'&!hiv[order(hiv$Pair.ID..),'donor'])
-recipientBetaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID..)],hiv[order(hiv$Pair.ID..),'select']=='BE'&!hiv[order(hiv$Pair.ID..),'donor'])
+cladeBIds<-assignGroups(hiv$Pair.ID,hiv$Subtype=='B')
+recipientIds<-assignGroups(hiv$sample[order(hiv$Pair.ID)],!hiv$donor[order(hiv$Pair.ID)])
+alphaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID)],hiv[order(hiv$Pair.ID),'select']=='A2'&hiv[order(hiv$Pair.ID),'donor'])
+betaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID)],hiv[order(hiv$Pair.ID),'select']=='BE'&hiv[order(hiv$Pair.ID),'donor'])
+recipientAlphaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID)],hiv[order(hiv$Pair.ID),'select']=='A2'&!hiv[order(hiv$Pair.ID),'donor'])
+recipientBetaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID)],hiv[order(hiv$Pair.ID),'select']=='BE'&!hiv[order(hiv$Pair.ID),'donor'])
 
 #stick recipient beta/alpha treated with untreated variance
 #stick beta treated genital in beta treated plasma
 hiv$group<-paste(hiv$sample,ifelse(hiv$isGenital,ifelse(hiv$select=='BE','PL',ifelse(hiv$isGenital,'GE','PL')),'PL'),ifelse(hiv$donor,hiv$select,'UT'))
 hiv$groupType<-paste(ifelse(hiv$donor,'Donor','Recipient'),ifelse(hiv$select=='BE','PL',ifelse(hiv$isGenital,'GE','PL')),ifelse(hiv$donor,hiv$select,'UT'))
-groupIds<-assignGroups(hiv$group[order(hiv$Pair.ID..,hiv$sampleFluid)],rep(TRUE,nrow(hiv)))
-groupTypeIds<-assignGroups(hiv$groupType[order(hiv$Pair.ID..,hiv$sampleFluid)],rep(TRUE,nrow(hiv)))
+groupIds<-assignGroups(hiv$group[order(hiv$Pair.ID,hiv$sampleFluid)],rep(TRUE,nrow(hiv)))
+groupTypeIds<-assignGroups(hiv$groupType[order(hiv$Pair.ID,hiv$sampleFluid)],rep(TRUE,nrow(hiv)))
 groupTypes<-sapply(names(groupIds),function(x)hiv[hiv$group==x,'groupType'][1])
 #groupTypes<-sub('^(Donor|Recipient)-?[0-9]? [0-9]+ ','\\1 ',names(groupIds))
 #groupTypeIds<-structure(hiv$groupTypes,names=unique(groupTypes))
@@ -152,18 +152,18 @@ if(!exists('fits')){
       N=nrow(xx),
       isCladeB=as.integer(xx$Subtype=='B'),
       isGenital=as.integer(xx$fluid!='PL'),
-      nGenital=max(xx[xx$fluid!='PL','Pair.ID..']),
+      nGenital=max(xx[xx$fluid!='PL','Pair.ID']),
       isRecipient=as.integer(!xx$donor),
       nGroup=max(groupIds),
       groupIds=groupIds[xx$group],
-      nPair=max(xx$Pair.ID..),
-      pairIds=xx$Pair.ID..,
+      nPair=max(xx$Pair.ID),
+      pairIds=xx$Pair.ID,
       nRecipient=sum(recipientIds<9999),
       recipientIds=recipientIds[xx$sample],
       nGroupTypes=length(unique(xx$groupType)),
       groupTypes=groupTypeIds[groupTypes],
       nCladeB=sum(cladeBIds<9999),
-      cladeBId=cladeBIds[as.character(xx$Pair.ID..)],
+      cladeBId=cladeBIds[as.character(xx$Pair.ID)],
       nAlpha=sum(alphaIds<9999),
       alphaIds=alphaIds[xx$sampleSelect],
       nBeta=sum(betaIds<9999),

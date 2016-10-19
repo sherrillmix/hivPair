@@ -13,7 +13,7 @@ dev.off()
 
 
 
-uniqSample<-unique(hiv$sample[order(hiv$Pair.ID..,hiv$Donor.or.Recipient)])
+uniqSample<-unique(hiv$sample[order(hiv$Pair.ID,hiv$Donor.or.Recipient)])
 pairId<-sub('.* ','',uniqSample)
 labs<-factor(hiv$sample,levels=uniqSample)
 cols<-c('#FF000066','#0000FF66')
@@ -39,7 +39,7 @@ dev.off()
 
 
 
-uniqSample<-unique(hiv$sampleSelect[order(hiv$Pair.ID..,hiv$donorRec,c('UT'=1,'A2'=2,'BE'=3)[hiv$select])])
+uniqSample<-unique(hiv$sampleSelect[order(hiv$Pair.ID,hiv$donorRec,c('UT'=1,'A2'=2,'BE'=3)[hiv$select])])
 pairId<-sub('^[A-Za-z0-9-]+ ([0-9]) [A-Z0-9]+','\\1',uniqSample)
 labs<-factor(hiv$sampleSelect,levels=uniqSample)
 cols<-c('#FF000066','#0000FF66')
@@ -76,17 +76,17 @@ dev.off()
 #IFN alpha IC50
 selectVars<-c(
   'Env.RT'='Env/RT',
-  'Infectivity.RLU.pg.RT...T1249.'='Infectivity (RLU/pg RT)',
+  'Infectivity.RLU.pg.RT...T1249'='Infectivity (RLU/pg RT)',
   'Replicative.capacity.Pooled.Donor.cells.p24.d7'='Pooled donor\nReplicative capacity (day 7 p24)',
   'meanRepCap'='Mean replicative capacity\n(proportion of maximum day 7 p24)',
   'meanIfna'='IFNa2 IC50 (pg/ml)',
-  'IFNbeta.Pooled.Donor.cells.IC50..pg.ml.'='IFNbeta IC50 (pg/ml)',
-  'IFNa2.Pooled.Donor.cells.IC50..pg..ml.'='IFNa2 IC50 (pg/ml)'
+  'IFNbeta.Pooled.Donor.cells.IC50..pg.ml'='IFNbeta IC50 (pg/ml)',
+  'IFNa2.Pooled.Donor.cells.IC50..pg..ml'='IFNa2 IC50 (pg/ml)'
 )
 nonLog<-'meanRepCap'
-  #'IFNa2.PD.IC50..U.ml.'='Pooled donor\nIFNa2 IC50 (U/ml)',
+  #'IFNa2.PD.IC50..U.ml'='Pooled donor\nIFNa2 IC50 (U/ml)',
   #'Replicative.capacity.Single.Donor.p24.d7'='Single donor\nReplicative capactity\n(day 7 p24)',
-  #'IFNa2.SD.IC50..U.ml.'='Single donor\nIFNa2 IC50 (U/ml)',
+  #'IFNa2.SD.IC50..U.ml'='Single donor\nIFNa2 IC50 (U/ml)',
 if(any(!names(selectVars) %in% colnames(hiv)))stop(simpleError('Unknown columns in selectVars'))
 
 logAxis<-function(x,axisNum=2,addExtra=TRUE,spreadRange=1.3,...){
@@ -102,7 +102,7 @@ logAxis<-function(x,axisNum=2,addExtra=TRUE,spreadRange=1.3,...){
   }
   axis(axisNum,10^prettyY,10^prettyY,las=2,...)
 }
-uniqSample<-unique(hiv$sampleFluid[order(hiv$Pair.ID..,hiv$Donor.or.Recipient,c('PL'=1,'CV'=2,'SE'=3)[hiv$fluid])])
+uniqSample<-unique(hiv$sampleFluid[order(hiv$Pair.ID,hiv$Donor.or.Recipient,c('PL'=1,'CV'=2,'SE'=3)[hiv$fluid])])
 pairId<-sub('.* ([0-9]+) [A-Z]+','\\1',uniqSample)
 labs<-factor(hiv$sampleFluid,levels=uniqSample)
 cols<-c('TRUE PL'='#FF000055','TRUE CV'='#0000FF55','TRUE SE'='#0000FF55','FALSE PL'='#FF770055')
@@ -138,7 +138,7 @@ for(fluid in list('PL',unique(hiv$fluid))){
       message(var)
       isLog<-!var %in% nonLog
       thisData<-hiv[hiv$select=='UT'&hiv$fluid %in% fluid&!is.na(hiv[,var]),]
-      infectData<-tapply(thisData[,var][thisData$donor],thisData$Pair.ID..[thisData$donor],median,na.rm=TRUE)
+      infectData<-tapply(thisData[,var][thisData$donor],thisData$Pair.ID[thisData$donor],median,na.rm=TRUE)
       #infectData<-sort(infectData,decreasing=TRUE)
       ylim<-range(thisData[,var],na.rm=TRUE)
       if(!isLog)ylim<-c(0,1)
@@ -146,11 +146,11 @@ for(fluid in list('PL',unique(hiv$fluid))){
       pairOrder<-1:length(infectData)
       cols<-rainbow.lab(length(infectData),alpha=.5)
       cols2<-rainbow.lab(length(infectData))
-      names(cols)<-names(cols2)<-sort(unique(thisData$Pair.ID..))
+      names(cols)<-names(cols2)<-sort(unique(thisData$Pair.ID))
       #rectWidth<-.004
       nDonor<-length(infectData)
       donorStep<-.6/(nDonor-1)
-      nRecs<-length(unique(paste(thisData$Donor.or.Recipient,thisData$Pair.ID..)[!thisData$donor]))
+      nRecs<-length(unique(paste(thisData$Donor.or.Recipient,thisData$Pair.ID)[!thisData$donor]))
       recStep<-.6/(nRecs-1)
       pdf(sprintf('out/pair/pair_%s_%s_%s.pdf',plotType,var,paste(fluid,collapse='-')),width=4,height=4)
         par(mar=c(6.1,4,.1,.1),lheight=.9)
@@ -165,8 +165,8 @@ for(fluid in list('PL',unique(hiv$fluid))){
         pointSize<-.4
         for(ii in 1:length(infectData)){
           thisPair<-names(infectData)[ii]
-          thisDonor<-thisData[thisData$Pair.ID..==thisPair&thisData$donor,]
-          thisRec<-thisData[thisData$Pair.ID..==thisPair&!thisData$donor,]
+          thisDonor<-thisData[thisData$Pair.ID==thisPair&thisData$donor,]
+          thisRec<-thisData[thisData$Pair.ID==thisPair&!thisData$donor,]
           thisRec<-split(thisRec,thisRec$Donor.or.Recipient)
           dPos<-1+donorPos
           rPos<-2+recPos+0:(length(thisRec)-1)*recStep
@@ -224,9 +224,9 @@ names(selectCol)<-names(selectPos)
 for(var in names(selectVars)){
   ylim<-range(hiv[hiv$fluid=='PL',var],na.rm=TRUE)
   pdf(sprintf('out/interferon_%s.pdf',var),height=10,width=8)
-  par(mfrow=c(ceiling(length(unique(hiv$Pair.ID..))/2),2))
-  for(pair in sort(unique(hiv$Pair.ID..))){
-    thisData<-hiv[hiv$fluid=='PL'&hiv$Pair.ID..==pair&!is.na(hiv[,var]),]
+  par(mfrow=c(ceiling(length(unique(hiv$Pair.ID))/2),2))
+  for(pair in sort(unique(hiv$Pair.ID))){
+    thisData<-hiv[hiv$fluid=='PL'&hiv$Pair.ID==pair&!is.na(hiv[,var]),]
     patients<-unique(thisData$baseName)
     patients<-patients[order(!patients %in% thisData$patients[thisData$donor],patients)]
     patientPos<-1:length(patients)
