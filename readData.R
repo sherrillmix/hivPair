@@ -20,6 +20,7 @@ hiv$sampleFluidSelect<-paste(hiv$donorRec,hiv$Pair.ID..,hiv$fluid,hiv$select)
 hiv$fluidSelectDonor<-paste(ifelse(hiv$donor,'DO','RE'),ifelse(hiv$fluid=="PL",'PL','GE'),hiv$select)
 hiv$seqId<-sprintf('seq%d',1:nrow(hiv))
 hiv$baseName<-sub('\\..*$','',hiv$Renamed)
+hiv$nameFluidSelect<-paste(hiv$baseName,hiv$fluid,hiv$select)
 hiv$isGenital<-hiv$fluid!='PL'
 donors<-with(hiv[hiv$donor,],tapply(baseName,Pair.ID..,unique))
 recs<-with(hiv[!hiv$donor,],tapply(baseName,Pair.ID..,unique))
