@@ -4,12 +4,22 @@ if(!exists('onlyDiffAA'))source('parseSeqs.R')
 
 out<-mclapply(names(targetCols),function(targetCol){
   message(targetCol)
+  thisTransform<-targetColTransform[targetCol]
+  if(thisTransform=='log'){
+    transformFunc<-log10
+  }else if(thisTransform=='logit'){
+    transformFunc<-function(x)logit(x/100)
+  } else if(thisTransform=='identity'){
+    transformFunc<-function(x)x
+  }else{
+    stop(simpleError('Unknown tranform'))
+  }
   modelInput<-as.data.frame(onlyDiffAA,onlyDiff)
   #modelInput$pair<-as.factor(hiv$Pair.ID..)
   modelMatrix<-model.matrix(formula(sprintf('~ %s',paste(colnames(modelInput),collapse='+'))),modelInput)
   selector<-hiv$donor&!is.na(hiv[,targetCol])
-  unadjustTarget<-log2(hiv[selector,targetCol])
-  target<-unadjustTarget-log2(ave(hiv[selector,targetCol],hiv[selector,'Pair.ID..'],FUN=function(x)mean(x,na.rm=TRUE)))
+  unadjustTarget<-transformFunc(hiv[selector,targetCol])
+  target<-unadjustTarget-transformFunc(ave(hiv[selector,targetCol],hiv[selector,'Pair.ID'],FUN=function(x)mean(x,na.rm=TRUE)))
   fitAlpha<-cv.glmnet(modelMatrix[selector,],target,nfolds=length(target),grouped=FALSE)
   fitAlpha2<-cv.glmnet(modelMatrix[selector,],unadjustTarget,nfolds=length(target),grouped=FALSE)
   #fitBeta<-cv.glmnet(modelMatrix[hiv$donor&!is.na(hiv$IFNbeta.PD.IC50..ng.ml.),],log2(hiv$IFNbeta.PD.IC50..ng.ml.[hiv$donor&!is.na(hiv$IFNbeta.PD.IC50..ng.ml.)]),nfolds=sum(hiv$donor&!is.na(hiv$IFNbeta.PD.IC50..ng.ml.)),grouped=FALSE)
