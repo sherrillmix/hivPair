@@ -85,4 +85,7 @@ targetColCensorDown[['Bnaber.IC50']]<-rep(20,nrow(hiv))
 targetColCensorDown[['vres']]<-hiv$minVres
 goodTargetCols<-targetCols[1:5]
 
+#note using log10 instead of log to make plotting easier
+logit<-function(p)log10(p)-log10(1-p)
+invLogit<-function(x)10^(x)/(10^(x)+1)
 

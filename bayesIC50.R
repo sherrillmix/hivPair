@@ -3,9 +3,6 @@ library('dnar')
 library('vioplot')
 library('png') #for raster inside pdf
 
-#note using log10 instead of log to make plotting easier
-logit<-function(p)log10(p)-log10(1-p)
-invLogit<-function(x)10^(x)/(10^(x)+1)
 
 #for parallel
 nThreads<-50
