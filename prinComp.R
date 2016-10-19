@@ -7,14 +7,11 @@ rownames(tmp)<-hiv[selector,'Renamed']
 pca<-prcomp(tmp,scale.=TRUE)
 pcaPoints<-t(t(pca$x)/pca$sdev/sqrt(nrow(pca$x))) #figure out the point positions based on scores scaled by standard deviations
 importance<-summary(pca)$importance[2,]
-
 cols<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.6)
 #pch<-structure(c(21,22,22),names=c('PL','SE','CV'))
 pch<-structure(c(21,21,21),names=c('PL','SE','CV'))
-#col=ifelse(hiv[selector,'select']=='BE','black',ifelse(hiv[selector,'select']=='A2','red','#00000055'))
 cols2<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.8)
 names(cols)<-names(cols2)<-sort(unique(hiv$fluidSelectDonor))
-
 pdf('out/pca.pdf')
   for(select in list(1:2,2:3,3:4,4:5)){
     plot(
@@ -23,8 +20,8 @@ pdf('out/pca.pdf')
       xlab=sprintf('Principal component %d (%d%% of variance)',select[1],round(importance[select[1]]*100)),
       ylab=sprintf('Principal component %d (%d%% of variance)',select[2],round(importance[select[2]]*100))
     )
-    points(pcaPoints[,select],bg=cols[as.character(hiv[selector,'fluidSelectDonor'])],col=cols2[as.character(hiv[selector,'fluidSelectDonor'])],pch=21)
-    legend('bottomleft',names(cols),pch=21,col=cols2,pt.bg=cols,inset=.01)
+    points(pcaPoints[,select],bg=cols[as.character(hiv[selector,'fluidSelectDonor'])],col=cols2[as.character(hiv[selector,'fluidSelectDonor'])],pch=21,cex=1.5)
+    legend('bottomleft',names(cols),pch=21,col=cols2,pt.bg=cols,inset=.01,pt.cex=1.5)
     biplot(pca,choices=select,cex=.25)
   }
 dev.off()
