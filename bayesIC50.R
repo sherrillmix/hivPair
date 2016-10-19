@@ -3,8 +3,9 @@ library('dnar')
 library('vioplot')
 library('png') #for raster inside pdf
 
-logit<-function(p)log(p)-log(1-p)
-invLogit<-function(x)exp(x)/(exp(x)+1)
+#note using log10 instead of log to make plotting easier
+logit<-function(p)log10(p)-log10(1-p)
+invLogit<-function(x)10^(x)/(10^(x)+1)
 
 #for parallel
 nThreads<-50
@@ -208,7 +209,7 @@ convertCols<-function(cols,means,sds,sims){
 
 cachedTabs<-cacheOperation('work/stanTabs.Rdat',lapply,names(targetCols),function(targetCol){
   if(targetColTransform[targetCol]=='identity') xlim<-c(-420,530)
-  else if(targetCol=='vres')xlim<-c(-1.2,7.2)
+  else if(targetCol=='vres')xlim<-c(-1.2,3.5)
   else xlim<-c(-1.2,2.5)
   bins<-seq(xlim[1],xlim[2],length.out=200)
   message(targetCol)
