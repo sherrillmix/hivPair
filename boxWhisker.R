@@ -64,19 +64,29 @@ cols2<-rainbow.lab(length(unique(hiv$Pair.ID)),alpha=.7)
 names(cols)<-names(cols2)<-unique(hiv$Pair.ID)
 for(targetCol in names(targetCols)){
   selector<-!is.na(hiv[,targetCol])
-  pos<-seq(-.3,.3,length.out=max(hiv$Pair.ID))
-  catPos<-structure(1:length(unique(hiv$fluidSelectDonor)),names=unique(hiv$fluidSelectDonor[order(hiv$donor,hiv$fluid=='PL',hiv$select=='UT',hiv$select=='A2',decreasing=TRUE)]))
+  #pos<-seq(-.35,.35,length.out=max(hiv$Pair.ID))
+  pos<-as.numeric(ave(hiv$sample[selector],hiv$fluidSelectDonor[selector],FUN=function(pair){
+    nPos<-length(unique(pair))
+    step<-.13
+    if(nPos<4)step<-.2
+    if(nPos>7)step<-.11
+    xStart<--(nPos-1)*step/2
+    pairPos<-structure(xStart+seq(0,nPos*step,step),names=sort(unique(pair)))
+    pairPos[as.character(pair)]
+  }))
+  catPos<-structure(1:length(unique(hiv$fluidSelectDonor)),names=unique(hiv$fluidSelectDonor[order(hiv$donor,hiv$select=='UT',hiv$fluid=='PL',hiv$select=='A2',decreasing=TRUE)]))
   pdf(sprintf('out/boxWhisker/7line_%s.pdf',targetCol),width=8)
     par(mar=c(5,5,.1,.1))
-    plot(1,1,type='n',xlim=c(.5,length(unique(hiv$fluidSelectDonor))),ylim=range(hiv[selector,targetCol]),ylab=targetCols[targetCol],log='y',las=1,xaxt='n',yaxt='n',xlab='',mgp=c(4,1,0))
-    logAxis(2,las=1,addExtra=TRUE,mgp=c(3,.7,0))
+    plot(1,1,type='n',xlim=c(.4,length(unique(hiv$fluidSelectDonor))+.6),ylim=range(hiv[selector,targetCol]),ylab=targetCols[targetCol],log='y',las=1,xaxt='n',yaxt='n',xlab='',mgp=c(4,1,0),xaxs='i')
+    doExponent<-max(hiv[selector,targetCol])<100&min(hiv[selector,targetCol])>1
+    logAxis(2,las=1,addExtra=TRUE,exponent=!doExponent,mgp=c(3,.7,0))
     axis(1,catPos,names(catPos),las=2)
     rect(seq(1.5,max(catPos),2),10^par('usr')[3],seq(2.5,max(catPos)+.5,2),10^par('usr')[4],col='#00000011',border=NA)
     ranges<-do.call(rbind,tapply(hiv[selector,targetCol],hiv[selector,'fluidSelectDonor'],range))
-    xPos<-catPos[hiv[selector,'fluidSelectDonor']]+pos[hiv[selector,'Pair.ID']]
+    xPos<-catPos[hiv[selector,'fluidSelectDonor']]+pos
     ranges<-do.call(rbind,tapply(hiv[selector,targetCol],xPos,range))
-    segments(as.numeric(rownames(ranges)),ranges[,1],as.numeric(rownames(ranges)),ranges[,2],col='#00000033')
-    points(xPos+offsetX(log10(hiv[selector,targetCol]),xPos,width=.04),hiv[selector,targetCol],cex=.5,pch=21,col=NA,bg=cols2[hiv[selector,'Pair.ID']])
+    segments(as.numeric(rownames(ranges)),ranges[,1],as.numeric(rownames(ranges)),ranges[,2],col='#00000011')
+    points(xPos+offsetX(log10(hiv[selector,targetCol]),xPos,width=.05),hiv[selector,targetCol],cex=1.4,pch=21,col=NA,bg=cols2[hiv[selector,'Pair.ID']])
   dev.off()
 }
 
