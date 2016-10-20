@@ -16,12 +16,12 @@ pdf('out/pca.pdf')
   for(select in list(1:2,2:3,3:4,4:5)){
     plot(
       1,1,type='n',las=1,
-      xlim=range(pcaPoints[,select[1]]),ylim=range(pcaPoints[,select[2]]),
+      xlim=range(-pcaPoints[,select[1]]),ylim=range(-pcaPoints[,select[2]]),
       xlab=sprintf('Principal component %d (%d%% of variance)',select[1],round(importance[select[1]]*100)),
       ylab=sprintf('Principal component %d (%d%% of variance)',select[2],round(importance[select[2]]*100))
     )
-    points(pcaPoints[,select],bg=cols[as.character(hiv[selector,'fluidSelectDonor'])],col=cols2[as.character(hiv[selector,'fluidSelectDonor'])],pch=21,cex=1.5)
-    legend('bottomleft',names(cols),pch=21,col=cols2,pt.bg=cols,inset=.01,pt.cex=1.5)
+    points(-pcaPoints[,select[1]],-pcaPoints[,select[2]],bg=cols[as.character(hiv[selector,'fluidSelectDonor'])],col=cols2[as.character(hiv[selector,'fluidSelectDonor'])],pch=21,cex=1.5)
+    legend('topright',names(cols),pch=21,col=cols2,pt.bg=cols,inset=.01,pt.cex=1.5)
     biplot(pca,choices=select,cex=.25)
   }
 dev.off()
