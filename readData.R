@@ -10,6 +10,7 @@ hiv<-read.xlsx("data/Final all data master 101116 copy 2.xlsx",sheetIndex=1,stri
 hiv<-hiv[hiv$Renamed!='',]
 hiv<-hiv[apply(hiv,1,function(x)!all(is.na(x))),apply(hiv,2,function(x)!all(is.na(x)))]
 colnames(hiv)<-sub('\\.+$','',sub('^X\\.','',colnames(hiv)))
+hiv<-hiv[hiv$Renamed!='CH742.SE.082708.BE.1',]
 hiv$seq<-toupper(gsub('[ \n]','',hiv$Sequence))
 hiv$select<-sapply(strsplit(hiv$Renamed,'\\.'),'[',4)
 hiv$fluid<-sapply(strsplit(hiv$Renamed,'\\.'),'[',2)
