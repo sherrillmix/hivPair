@@ -1,4 +1,5 @@
 library(vipor)
+library(ROCR)
 if(!exists('hiv'))source('readData.R')
 
 selector<-!apply(is.na(hiv[,names(goodTargetCols)]),1,any)
@@ -74,9 +75,49 @@ pdf('out/centroidDist.pdf')
   par(mar=c(5.2,4,.1,.1))
   vpPlot(factor(hiv[selector,'fluidSelectDonor'],levels=unique(hiv$fluidSelectDonor[order(hiv$donor,hiv$select=='UT',hiv$fluid=='PL',hiv$select=='A2',decreasing=TRUE)])),recipientDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair.ID'])],pch=21,ylab='Distance to recipient samples centroid',las=2)
   legend('topright',names(cols),pch=21,pt.bg=cols,col=NA,inset=.01,title='Pair',ncol=2)
-  vpPlot(factor(hiv[selector,'fluidSelectDonor'],levels=unique(hiv$fluidSelectDonor[order(hiv$donor,hiv$select=='UT',hiv$fluid=='PL',hiv$select=='A2',decreasing=TRUE)])),pairRecDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair.ID'])],pch=21,ylab='Distance to within-pair recipient centroid',las=2)
+  vpPlot(factor(hiv[selector,'fluidSelectDonor'],levels=unique(hiv$fluidSelectDonor[order(hiv$donor,hiv$select=='UT',hiv$fluid=='PL',hiv$select=='A2',decreasing=TRUE)])),pairRecDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair.ID'])],pch=21,ylab='Distance to within-pair recipient centroid',las=2,cex=2)
+  legend('topright',names(cols),pch=21,pt.bg=cols,col=NA,inset=.01,title='Pair',ncol=2,cex=2)
+  pos<-vpPlot(factor(hiv[selector,'fluidSelectDonor'],levels=unique(hiv$fluidSelectDonor[order(hiv$donor,hiv$select=='UT',hiv$fluid=='PL',hiv$select=='A2',decreasing=TRUE)])),pairRecDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair.ID'])],pch=21,ylab='Distance to within-pair recipient centroid',las=2)
   legend('topright',names(cols),pch=21,pt.bg=cols,col=NA,inset=.01,title='Pair',ncol=2)
+  text(pos,pairRecDist,hiv[selector,'Renamed'],cex=.2) 
 dev.off()
+out<-hiv[selector,c('Renamed','Original.name','select','fluid','donorRec')]
+out$singleDist<-recipientDist
+out$pairDist<-pairRecDist
+write.csv(out,'out/centroidDist.csv',row.names=FALSE)
 
 pdf('out/tree.pdf',height=50,width=20);par(mar=c(4,1,1,10));plot(as.dendrogram(hclust(dists)),horiz=TRUE);dev.off()
+
+pdf('out/roc.pdf',width=4.5,height=4.5)
+  for(genital in unique(hiv$isGenital)){
+    thisSelect<-selector&hiv$select=='UT'&(hiv$isGenital==genital|!hiv$donor)
+    preds<-lapply(names(goodTargetCols),function(xx)prediction(hiv[thisSelect,xx], !hiv[thisSelect,'donor']))
+    names(preds)<-names(goodTargetCols)
+    perfs<-lapply(preds,function(pred)performance(pred, "tpr", "fpr"))
+    aucs<-lapply(preds,function(pred)performance(pred, "auc")@y.values[[1]])
+    cols<-rainbow.lab(length(perfs),alpha=.7)
+    par(mar=c(3.5,3.5,1,.1))
+    plot(1,1,type='n',xlim=0:1,ylim=0:1,xlab=perfs[[ii]]@x.name,ylab=perfs[[ii]]@y.name,las=1,mgp=c(2.2,.5,0),main=ifelse(genital,'Genital','Plasma'))
+    for(ii in 1:length(perfs))lines(perfs[[ii]]@x.values[[1]],perfs[[ii]]@y.values[[1]],col=cols[[ii]],lw=3)
+    abline(0,1,lty=2)
+    legend('bottomright',sub('\\(.*$','',targetCols[names(perfs)]),col=cols,lwd=2,adj=c(0,.5),bty='n')
+  }
+  for(treat in unique(hiv$select[hiv$select!='UT'])){
+    thisSelect<-selector&((hiv$donor&hiv$select==treat)|(!hiv$donor&hiv$select=='UT'))&!hiv$isGenital
+    preds<-lapply(names(goodTargetCols),function(xx)prediction(hiv[thisSelect,xx], !hiv[thisSelect,'donor']))
+    names(preds)<-names(goodTargetCols)
+    perfs<-lapply(preds,function(pred)performance(pred, "tpr", "fpr"))
+    aucs<-lapply(preds,function(pred)performance(pred, "auc")@y.values[[1]])
+    cols<-rainbow.lab(length(perfs),alpha=.7)
+    par(mar=c(3.5,3.5,1,.1))
+    plot(1,1,type='n',xlim=0:1,ylim=0:1,xlab=perfs[[ii]]@x.name,ylab=perfs[[ii]]@y.name,las=1,mgp=c(2.2,.5,0),main=sprintf('%s donor vs UT recipient',treat))
+    for(ii in 1:length(perfs))lines(perfs[[ii]]@x.values[[1]],perfs[[ii]]@y.values[[1]],col=cols[[ii]],lw=3)
+    abline(0,1,lty=2)
+    legend('bottomright',sub('\\(.*$','',targetCols[names(perfs)]),col=cols,lwd=2,adj=c(0,.5),bty='n')
+  }
+dev.off()
+
+
+withAs(xx=hiv[hiv$select!='UT'&selector&!hiv$isGenital,],vpPlot(xx$donor,xx$IFNbeta.Pooled.Donor.cells.IC50..pg.ml))
+
 
