@@ -65,6 +65,8 @@ if(any(round(hiv$vres,5)<round(hiv$minVres)))stop(simpleError('Vres < min Vres')
 if(any(round(hiv$vres,5)<=round(hiv$minVres,5)&!hiv$vresCensor))stop(simpleError('Vres == min Vres and not censored'))
 if(any(round(hiv$vres,5)>round(hiv$minVres,5)*1.02&hiv$vresCensor))stop(simpleError('Vres > min Vres and censored'))
 
+phyloDist<-data.frame('dist'=t(read.csv('data/median TF dists.csv')))
+
 targetCols<-c(
   'Env.RT'='Env/RT',
   'Infectivity.RLU.pg.RT...T1249'='Infectivity (RLU/pg RT)',
@@ -91,4 +93,5 @@ goodTargetCols<-targetCols[1:5]
 #note using log10 instead of log to make plotting easier
 logit<-function(p)log10(p)-log10(1-p)
 invLogit<-function(x)10^(x)/(10^(x)+1)
+
 
