@@ -95,3 +95,9 @@ exp(mean(log(hiv[hiv$baseName=='CH492'&hiv$select=='UT'&hiv$fluid=='PL','IFNa2.P
 
 exp(mean(log(hiv[hiv$baseName=='CH492'&hiv$select=='BE'&hiv$fluid=='PL','IFNbeta.Pooled.Donor.cells.IC50..pg.ml'])))/
 exp(mean(log(hiv[hiv$baseName=='CH492'&hiv$select=='UT'&hiv$fluid=='PL','IFNbeta.Pooled.Donor.cells.IC50..pg.ml'])))
+
+fakeLabs<-sprintf('CH%d',round(runif(20,10,1000)))
+pdf('axisTest.pdf',width=3,height=2)
+par(mar=c(2.1,3,.1,.1));plot(1:20,xaxt='n',ylab='Fake data',xlab='',mgp=c(2,.6,0),las=1)
+axis(1,1:20,FALSE,tcl=-.2);text(1:20,convertLineToUser(.3),fakeLabs,srt=55,adj=1,xpd=NA,cex=.7)
+dev.off()
