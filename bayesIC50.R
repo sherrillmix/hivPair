@@ -210,6 +210,7 @@ cachedTabs<-cacheOperation('work/stanTabs.Rdat',lapply,names(targetCols),functio
   else xlim<-c(-1.2,2.5)
   bins<-seq(xlim[1],xlim[2],length.out=200)
   message(targetCol)
+  dat<-fits[[targetCol]][['dat']]
   fit<-fits[[targetCol]][['fit']]
   sims<-as.array(fit)
   dim(sims)<-c(prod(dim(sims)[c(1,2)]),dim(sims)[3])
