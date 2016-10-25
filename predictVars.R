@@ -2,7 +2,11 @@ library(glmnet)
 library(glmnetPlotR)
 if(!exists('onlyDiffAA'))source('parseSeqs.R')
 
-out<-mclapply(names(targetCols),function(targetCol){
+#modelInput<-as.data.frame(cbind(onlyDiffAA,onlyDiff))
+modelInput<-as.data.frame(cbind(onlyDiffAA))
+#modelInput$pair<-as.factor(hiv$Pair.ID)
+modelMatrix<-model.matrix(formula(sprintf('~ %s',paste(colnames(modelInput),collapse='+'))),modelInput)
+aaFits<-mclapply(names(targetCols),function(targetCol){
   message(targetCol)
   thisTransform<-targetColTransform[targetCol]
   if(thisTransform=='log'){
@@ -14,10 +18,8 @@ out<-mclapply(names(targetCols),function(targetCol){
   }else{
     stop(simpleError('Unknown tranform'))
   }
-  modelInput<-as.data.frame(onlyDiffAA,onlyDiff)
-  #modelInput$pair<-as.factor(hiv$Pair.ID)
-  modelMatrix<-model.matrix(formula(sprintf('~ %s',paste(colnames(modelInput),collapse='+'))),modelInput)
-  selector<-hiv$donor&!is.na(hiv[,targetCol])
+  #selector<-hiv$donor&!is.na(hiv[,targetCol])
+  selector<-!is.na(hiv[,targetCol])
   unadjustTarget<-transformFunc(hiv[selector,targetCol])
   target<-unadjustTarget-transformFunc(ave(hiv[selector,targetCol],hiv[selector,'Pair.ID'],FUN=function(x)mean(x,na.rm=TRUE)))
   fitAlpha<-cv.glmnet(modelMatrix[selector,],target,nfolds=length(target),grouped=FALSE)
@@ -29,31 +31,44 @@ out<-mclapply(names(targetCols),function(targetCol){
     cv.glmnet(modelMatrix[selector,][pairSelect,],target[pairSelect],nfolds=sum(pairSelect),grouped=FALSE)
   })
   names(multiFit)<-unique(hiv$Pair.ID)
+  return(list('fitAlpha'=fitAlpha,'fitAlpha2'=fitAlpha2,'multiFit'=multiFit,'target'=target,'unadjustTarget'=unadjustTarget,'selector'=selector))
+},mc.cores=4)
+names(aaFits)<-names(targetCols)
+
+minBeta<-.01
+for(targetCol in names(targetCols)){
+  thisTransform<-targetColTransform[targetCol]
+  thisFit<-aaFits[[targetCol]]
+  fitAlpha<-thisFit[['fitAlpha']];fitAlpha2<-thisFit[['fitAlpha2']];multiFit<-thisFit[['multiFit']];target<-thisFit[['target']];unadjustTarget<-thisFit[['unadjustTarget']];selector<-thisFit[['selector']]
   pdf(sprintf('out/lasso/%s.pdf',targetCol))
   plotGlmnet(fitAlpha2,markBest1SE=TRUE,main=targetCols[targetCol])
-  plotBetas(fitAlpha2$glmnet.fit,ylab=targetCols[targetCol],transformFunc=function(x)2^x,labelLambda=fitAlpha$lambda.1se)
+  plotBetas(fitAlpha2$glmnet.fit,ylab=targetCols[targetCol],transformFunc=function(x)2^x,labelLambda=fitAlpha$lambda.1se,minBeta=minBeta)
   coefs<-coef(fitAlpha2)
-  coefs<-coefs[coefs[,1]!=0,]
+  coefs<-coefs[abs(coefs[,1])>minBeta,]
   coefs<-coefs[names(coefs)!="(Intercept)"]
+  coefs<-coefs[order(abs(coefs),decreasing=TRUE)]
   cols<-rainbow.lab(length(unique(hiv$Pair.ID)),alpha=.7)
   names(cols)<-unique(hiv$Pair.ID)
   if(length(coefs)>0){
     for(ii in names(coefs)){
+      par(mar=c(2,4,1.5,.5))
       vpPlot(modelInput[selector,sub('[A-Z]$','',ii)],unadjustTarget,col=NA,bg=cols[as.character(hiv$Pair.ID[selector])],pch=21,main=sprintf('%s: %0.3f',ii,coefs[ii]),ylab=sprintf('%s (%s)',targetCol,thisTransform))
       legend('topleft',names(cols),pt.bg=cols,pch=21,col=NA)
     }
   }
   plotGlmnet(fitAlpha,markBest1SE=TRUE,main=targetCols[targetCol])
-  plotBetas(fitAlpha$glmnet.fit,ylab=targetCols[targetCol],transformFunc=function(x)2^x,labelLambda=fitAlpha$lambda.1se)
+  plotBetas(fitAlpha$glmnet.fit,ylab=targetCols[targetCol],transformFunc=function(x)2^x,labelLambda=fitAlpha$lambda.1se,minBeta=minBeta)
   #plotGlmnet(fitBeta,markBest1SE=TRUE,main='IFN beta IC50')
   #plotBetas(fitBeta$glmnet.fit,ylab=expression('IFN beta IC'[50]%*%' '),transformFunc=function(x)2^x,labelLambda=10^-.3)
   coefs<-coef(fitAlpha)
-  coefs<-coefs[coefs[,1]!=0,]
+  coefs<-coefs[abs(coefs[,1])>minBeta,]
   coefs<-coefs[names(coefs)!="(Intercept)"]
+  coefs<-coefs[order(abs(coefs),decreasing=TRUE)]
   cols<-rainbow.lab(length(unique(hiv$Pair.ID)),alpha=.7)
   names(cols)<-unique(hiv$Pair.ID)
   if(length(coefs)>0){
     for(ii in names(coefs)){
+      par(mar=c(2,4,1.5,.5))
       vpPlot(modelInput[selector,sub('[A-Z]$','',ii)],target,col=NA,bg=cols[as.character(hiv$Pair.ID[selector])],pch=21,main=sprintf('%s: %0.3f',ii,coefs[ii]),ylab=sprintf('Mean adjusted %s (%s)',targetCol,thisTransform))
       legend('topleft',names(cols),pt.bg=cols,pch=21,col=NA)
     }
@@ -62,17 +77,19 @@ out<-mclapply(names(targetCols),function(targetCol){
     if(is.null(multiFit[[ii]]))next()
     message(ii)
     plotGlmnet(multiFit[[ii]],markBest1SE=TRUE,main=sprintf('Pair %s %s',ii,sub('\n',' ',targetCols[targetCol])))
-    plotBetas(multiFit[[ii]]$glmnet.fit,ylab=targetCols[targetCol],transformFunc=function(x)2^x,labelLambda=multiFit[[ii]]$lambda.1se)
+    plotBetas(multiFit[[ii]]$glmnet.fit,ylab=targetCols[targetCol],transformFunc=function(x)10^x,labelLambda=multiFit[[ii]]$lambda.1se,minBeta=minBeta)
     coefs<-coef(multiFit[[ii]])
-    coefs<-coefs[coefs[,1]!=0,]
+    coefs<-coefs[abs(coefs[,1])>minBeta,]
     coefs<-coefs[names(coefs)!="(Intercept)"]
+    coefs<-coefs[order(abs(coefs),decreasing=TRUE)]
     if(length(coefs)>0){
       for(ii in names(coefs)){
-        vpPlot(modelInput[selector,sub('[A-Z]$','',ii)][!is.na(unadjustTarget)],unadjustTarget[!is.na(unadjustTarget)],col=c(NA,'black')[(hiv$Pair.ID[selector]==ii)+1],bg=cols[as.character(hiv$Pair.ID[selector])],pch=21,main=sprintf('%s: %0.3f',ii,coefs[ii]),ylab=sprintf('%s (log)',targetCol))
+        par(mar=c(2,4,1.5,.5))
+        vpPlot(modelInput[selector,sub('[A-Z]$','',ii)][!is.na(unadjustTarget)],unadjustTarget[!is.na(unadjustTarget)],col=c(NA,'black')[(hiv$Pair.ID[selector]==ii)+1],bg=cols[as.character(hiv$Pair.ID[selector])],pch=21,main=sprintf('%s: %0.3f',ii,coefs[ii]),ylab=sprintf('%s (%s)',targetCol,thisTransform),las=1)
         legend('topleft',names(cols),pt.bg=cols,pch=21,col=NA)
       }
     }
   }
   dev.off()
-},mc.cores=4)
+}
 
