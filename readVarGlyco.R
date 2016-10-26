@@ -52,3 +52,7 @@ summary(sort(donorLengths[[1]])==sort(test2[grep('CH492',names(test2))]))
 summary(sort(recLengths[[1]][[1]])==sort(test2[grep('CH427',names(test2))]))
 
 
+phyloDist<-data.frame('dist'=t(read.csv('data/median TF dists.csv')))
+bDist<-read.csv('data/combinedB.3prUTpl.161020exc.dists.csv',header=FALSE,stringsAsFactors=FALSE)[,-1:-3]
+cDist<-read.csv('data/combinedC.3prUTpl.161020exc.dists.csv',header=FALSE,stringsAsFactors=FALSE)[,-1:-3]
+colnames(bDist)<-colnames(cDist)<-c('name','dist')
