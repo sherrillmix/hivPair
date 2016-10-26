@@ -13,17 +13,32 @@ cols<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.6)
 pch<-structure(c(21,21,21),names=c('PL','SE','CV'))
 cols2<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.8)
 names(cols)<-names(cols2)<-sort(unique(hiv$fluidSelectDonor))
-pdf('out/pca.pdf')
+pdf('out/pca.pdf',width=5,heig1.1ht=5)
   for(select in list(1:2,2:3,3:4,4:5)){
+    xlim <- range(-pcaPoints[,select[1]])
+    ylim <- range(-pcaPoints[,select[2]])
+    pcaArrows<-t(t(-pca$rotation[,select])*pca$sdev[select]*sqrt(nrow(pca$x)))	#figure out the arrow positions based on loadings scaled by sdev
+    xlimArrow<-range(pcaArrows[,1])
+    ylimArrow<-range(pcaArrows[,2])
+    ratio <- max(xlimArrow/xlim, ylimArrow/ylim)
+    par(mar=c(3.5,3.5,.1,.1))
     plot(
       1,1,type='n',las=1,
-      xlim=range(-pcaPoints[,select[1]]),ylim=range(-pcaPoints[,select[2]]),
+      #xlim=range(-pcaPoints[,select[1]]),ylim=range(-pcaPoints[,select[2]]),
+      xlim=xlim*1.1,ylim=ylim*1.1,mgp=c(2.4,.7,0),
       xlab=sprintf('Principal component %d (%d%% of variance)',select[1],round(importance[select[1]]*100)),
       ylab=sprintf('Principal component %d (%d%% of variance)',select[2],round(importance[select[2]]*100))
     )
+    arrows(0,0,pcaArrows[,1]/ratio,pcaArrows[,2]/ratio,length=.1) #draw arrows
+    arrowText<-dimnames(pcaArrows)[[1]] #get rownames of loadings for labels
+    par(lheight=.7)
+    text(pcaArrows/ratio,sub(' ','\n',sub('\\(.*$','',targetCols[rownames(pcaArrows)])),cex=.8) #label the arrows
     points(-pcaPoints[,select[1]],-pcaPoints[,select[2]],bg=cols[as.character(hiv[selector,'fluidSelectDonor'])],col=cols2[as.character(hiv[selector,'fluidSelectDonor'])],pch=21,cex=1.5)
     legend('topright',names(cols),pch=21,col=cols2,pt.bg=cols,inset=.01,pt.cex=1.5)
-    biplot(pca,choices=select,cex=.25)
+    #par(new=TRUE) #plot the next plot directly on top of the current one
+    limits<-range(pcaPoints[,select])*1. #find limits for x and y directions
+    #plot(pcaArrows,type="n",xaxt='n',yaxt='n',xlab='',ylab='',xlim=arrowScale*limits,ylim=arrowScale*limits) #set the axes for easy arrow drawing (messes up any additional plotting on score axes)
+    biplot(pca,choices=select,cex=.25,xlim=-xlim,ylim=-ylim)
   }
 dev.off()
 
