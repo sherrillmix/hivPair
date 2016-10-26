@@ -52,8 +52,8 @@ for(targetCol in names(targetCols)){
   if(length(coefs)>0){
     for(ii in names(coefs)){
       par(mar=c(2,4,1.5,.5))
-      vpPlot(modelInput[selector,sub('[A-Z]$','',ii)],unadjustTarget,col=NA,bg=cols[as.character(hiv$Pair.ID[selector])],pch=21,main=sprintf('%s: %0.3f',ii,coefs[ii]),ylab=sprintf('%s (%s)',targetCol,thisTransform))
-      legend('topleft',names(cols),pt.bg=cols,pch=21,col=NA)
+      vpPlot(modelInput[selector,sub('[A-Z]$','',ii)],unadjustTarget,col=NA,bg=cols[as.character(hiv$Pair.ID[selector])],pch=(21:22)[(!hiv$donor[selector])+1],main=sprintf('%s: %0.3f',ii,coefs[ii]),ylab=sprintf('%s (%s)',targetCol,thisTransform))
+      legend('topleft',c(names(cols),'D','R'),pt.bg=c(cols,'#00000066','#00000066'),pch=21,col=NA)
     }
   }
   plotGlmnet(fitAlpha,markBest1SE=TRUE,main=targetCols[targetCol])
@@ -69,24 +69,24 @@ for(targetCol in names(targetCols)){
   if(length(coefs)>0){
     for(ii in names(coefs)){
       par(mar=c(2,4,1.5,.5))
-      vpPlot(modelInput[selector,sub('[A-Z]$','',ii)],target,col=NA,bg=cols[as.character(hiv$Pair.ID[selector])],pch=21,main=sprintf('%s: %0.3f',ii,coefs[ii]),ylab=sprintf('Mean adjusted %s (%s)',targetCol,thisTransform))
-      legend('topleft',names(cols),pt.bg=cols,pch=21,col=NA)
+      vpPlot(modelInput[selector,sub('[A-Z]$','',ii)],target,col=NA,bg=cols[as.character(hiv$Pair.ID[selector])],pch=(21:22)[(!hiv$donor[selector])+1],main=sprintf('%s: %0.3f',ii,coefs[ii]),ylab=sprintf('Mean adjusted %s (%s)',targetCol,thisTransform))
+      legend('topleft',c(names(cols),'D','R'),pt.bg=c(cols,'#00000066','#00000066'),pch=21,col=NA)
     }
   }
-  for(ii in names(multiFit)){
-    if(is.null(multiFit[[ii]]))next()
-    message(ii)
-    plotGlmnet(multiFit[[ii]],markBest1SE=TRUE,main=sprintf('Pair %s %s',ii,sub('\n',' ',targetCols[targetCol])))
-    plotBetas(multiFit[[ii]]$glmnet.fit,ylab=targetCols[targetCol],transformFunc=function(x)10^x,labelLambda=multiFit[[ii]]$lambda.1se,minBeta=minBeta)
-    coefs<-coef(multiFit[[ii]])
+  for(pair in names(multiFit)){
+    if(is.null(multiFit[[pair]]))next()
+    message(pair)
+    plotGlmnet(multiFit[[pair]],markBest1SE=TRUE,main=sprintf('Pair %s %s',pair,sub('\n',' ',targetCols[targetCol])))
+    plotBetas(multiFit[[pair]]$glmnet.fit,ylab=targetCols[targetCol],transformFunc=function(x)10^x,labelLambda=multiFit[[pair]]$lambda.1se,minBeta=minBeta)
+    coefs<-coef(multiFit[[pair]])
     coefs<-coefs[abs(coefs[,1])>minBeta,]
     coefs<-coefs[names(coefs)!="(Intercept)"]
     coefs<-coefs[order(abs(coefs),decreasing=TRUE)]
     if(length(coefs)>0){
       for(ii in names(coefs)){
         par(mar=c(2,4,1.5,.5))
-        vpPlot(modelInput[selector,sub('[A-Z]$','',ii)][!is.na(unadjustTarget)],unadjustTarget[!is.na(unadjustTarget)],col=c(NA,'black')[(hiv$Pair.ID[selector]==ii)+1],bg=cols[as.character(hiv$Pair.ID[selector])],pch=21,main=sprintf('%s: %0.3f',ii,coefs[ii]),ylab=sprintf('%s (%s)',targetCol,thisTransform),las=1)
-        legend('topleft',names(cols),pt.bg=cols,pch=21,col=NA)
+        vpPlot(modelInput[selector,sub('[A-Z]$','',ii)][!is.na(unadjustTarget)],unadjustTarget[!is.na(unadjustTarget)],col=c(NA,'black')[(hiv$Pair.ID[selector]==pair)+1],bg=cols[as.character(hiv$Pair.ID[selector])],pch=(21:22)[hiv$donor+1],main=sprintf('Pair %s %s: %0.3f',pair,ii,coefs[ii]),ylab=sprintf('%s (%s)',targetCol,thisTransform),las=1)
+        legend('topleft',c(names(cols),'D','R'),pt.bg=c(cols,'#00000066','#00000066'),pch=rep(21:22,c(length(cols)+1,1)),col=c(c(NA,'black')[(names(cols)==pair)+1],NA,NA))
       }
     }
   }
