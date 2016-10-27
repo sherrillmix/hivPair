@@ -21,3 +21,14 @@ obsP<-apply(possibleObs,1,function(x)prod(lessPs[x])*prod((1-lessPs[!x])))
 print(sum(obsP[nLess>=sum(recLess)]))
 
 
+quantP<-function(x,singleY)mean(singleY>=c(x,singleY))
+fisherMethod<-function(ps)1-pchisq(-2*sum(log(ps)),length(ps)*2)
+
+tfs<-phyloDist[grep("TF",rownames(phyloDist)),,drop=FALSE]
+tfs$base<-sub('(v[0-9])?\\.TF','',rownames(tfs))
+allDist$base<-sapply(strsplit(allDist$name,'_'),'[[',1)
+ps<-sapply(rownames(tfs),function(xx)quantP(allDist[allDist$base==tfs[xx,'base'],'dist'],tfs[xx,'dist']))
+fisherMethod(ps)
+
+
+
