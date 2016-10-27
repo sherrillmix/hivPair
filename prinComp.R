@@ -118,11 +118,54 @@ write.csv(out,'out/centroidDist.csv',row.names=FALSE)
 
 pdf('out/tree.pdf',height=50,width=20);par(mar=c(4,1,1,10));plot(as.dendrogram(hclust(dists)),horiz=TRUE);dev.off()
 
+
+selector<-!apply(is.na(hiv[,names(goodTargetCols)]),1,any)
+subselect<-hiv[selector,]$select=='UT'
+scaled<-apply(hiv[selector,names(goodTargetCols)],2,function(x,subselect)(x-mean(x[subselect]))/sd(x[subselect]),subselect)
+pca<-prcomp(scaled[subselect,],scale.=FALSE)
+pcaPoints<-t(t(scaled %*% pca$rotation)/pca$sdev/sqrt(nrow(pca$x))) #figure out the point positions based on scores scaled by standard deviations
+importance<-summary(pca)$importance[2,]
+cols<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.6)
+#pch<-structure(c(21,22,22),names=c('PL','SE','CV'))
+pch<-structure(c(21,21,21),names=c('PL','SE','CV'))
+cols2<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.8)
+cols3<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.02)
+names(cols)<-names(cols2)<-names(cols3)<-sort(unique(hiv$fluidSelectDonor))
+pdf('out/pca2.pdf',width=5,height=5)
+  for(subfig2 in c(FALSE,TRUE)){
+  select<-1:2
+  xlim <- range(-pcaPoints[,select[1]])
+  ylim <- range(-pcaPoints[,select[2]])
+  pcaArrows<-t(t(-pca$rotation[,select])*pca$sdev[select]*sqrt(nrow(pca$x)))	#figure out the arrow positions based on loadings scaled by sdev
+  xlimArrow<-range(pcaArrows[,1])
+  ylimArrow<-range(pcaArrows[,2])
+  ratio <- max(xlimArrow/xlim, ylimArrow/ylim)
+  par(mar=c(3.5,3.5,.1,.1))
+  plot(
+    1,1,type='n',las=1,
+    #xlim=range(-pcaPoints[,select[1]]),ylim=range(-pcaPoints[,select[2]]),
+    xlim=xlim*1.1,ylim=ylim*1.1,mgp=c(2.4,.7,0),
+    xlab=sprintf('Principal component %d (%d%% of variance)',select[1],round(importance[select[1]]*100)),
+    ylab=sprintf('Principal component %d (%d%% of variance)',select[2],round(importance[select[2]]*100))
+  )
+  if(!subfig2){
+    arrows(0,0,pcaArrows[,1]/ratio,pcaArrows[,2]/ratio,length=.1) #draw arrows
+    arrowText<-dimnames(pcaArrows)[[1]] #get rownames of loadings for labels
+    par(lheight=.7)
+    text(pcaArrows/ratio,sub(' ','\n',sub('\\(.*$','',targetCols[rownames(pcaArrows)])),cex=.8) #label the arrows
   }
+  donorFluidBinary<-list('DO GE UT'=c(TRUE,TRUE),'DO PL UT'=c(TRUE,FALSE),'RE PL UT'=c(FALSE,FALSE))
+  for(dfName in names(donorFluidBinary)){
+    donorFluid<-donorFluidBinary[[dfName]]
+    donorFluidSelector<-hiv[selector,'donor']==donorFluid[1]&hiv[selector,'isGenital']==donorFluid[2]&hiv[selector,'select']=='UT'
+    hull<-expandedHull(-pcaPoints[donorFluidSelector,select],1,'ellipse')
+    polygon(hull,border=cols2[dfName],col=cols3[dfName],lwd=2.4)
+  }
+  if(subfig2)thisSelect<-!subselect
+  else thisSelect<-subselect
+  points(-pcaPoints[,select[1]][thisSelect],-pcaPoints[,select[2]][thisSelect],bg=cols[as.character(hiv[selector,'fluidSelectDonor'])[thisSelect]],col=cols2[as.character(hiv[selector,'fluidSelectDonor'])[thisSelect]],pch=21,cex=1.5)
+  if(subfig2) legend('topright',names(cols),pch=21,col=cols2,pt.bg=cols,inset=.01,pt.cex=1.5)
   }
 dev.off()
-
-
-withAs(xx=hiv[hiv$select!='UT'&selector&!hiv$isGenital,],vpPlot(xx$donor,xx$IFNbeta.Pooled.Donor.cells.IC50..pg.ml))
 
 
