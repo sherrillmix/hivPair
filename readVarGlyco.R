@@ -53,6 +53,8 @@ summary(sort(recLengths[[1]][[1]])==sort(test2[grep('CH427',names(test2))]))
 
 
 phyloDist<-data.frame('dist'=t(read.csv('data/median TF dists.csv')))
-bDist<-read.csv('data/combinedB.3prUTpl.161020exc.dists.csv',header=FALSE,stringsAsFactors=FALSE)[,-1:-3]
-cDist<-read.csv('data/combinedC.3prUTpl.161020exc.dists.csv',header=FALSE,stringsAsFactors=FALSE)[,-1:-3]
-colnames(bDist)<-colnames(cDist)<-c('name','dist')
+bDist<-read.csv('data/combinedB.3prUTpl.161020exc.dists.csv',header=FALSE,stringsAsFactors=FALSE)[,-1:-2]
+cDist<-read.csv('data/combinedC.3prUTpl.161020exc.dists.csv',header=FALSE,stringsAsFactors=FALSE)[,-1:-2]
+colnames(bDist)<-colnames(cDist)<-c('compare','name','dist')
+allDist<-rbind(cDist,bDist)
+allDist<-allDist[allDist$compare %in% c('CONSENSUS_B','CONSENSUS_C'),]
