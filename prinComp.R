@@ -1,5 +1,14 @@
 library(vipor)
 if(!exists('hiv'))source('readData.R')
+expandedHull<-function(xys,magnification=1,type=c('convex','ellipse')){
+  library(cluster)
+  type<-match.arg(type)
+  centroid<-apply(xys,2,mean)
+  magnified<-t(apply(xys,1,function(xy)(xy-centroid)*magnification+centroid))
+  if(type=='convex')return(magnified[chull(magnified),])
+  else if(type=='ellipse')return(predict(ellipsoidhull(magnified)))
+  else stop("Unknown type")
+}
 
 selector<-!apply(is.na(hiv[,names(goodTargetCols)]),1,any)
 tmp<-hiv[selector,names(goodTargetCols)]
@@ -11,9 +20,11 @@ cols<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.6)
 #pch<-structure(c(21,22,22),names=c('PL','SE','CV'))
 pch<-structure(c(21,21,21),names=c('PL','SE','CV'))
 cols2<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.8)
-names(cols)<-names(cols2)<-sort(unique(hiv$fluidSelectDonor))
-pdf('out/pca.pdf',width=5,heig1.1ht=5)
+cols3<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.02)
+names(cols)<-names(cols2)<-names(cols3)<-sort(unique(hiv$fluidSelectDonor))
+pdf('out/pca.pdf',width=5,height=5)
   for(select in list(1:2,2:3,3:4,4:5)){
+    for(hullType in c('ellipse','convex')){
     xlim <- range(-pcaPoints[,select[1]])
     ylim <- range(-pcaPoints[,select[2]])
     pcaArrows<-t(t(-pca$rotation[,select])*pca$sdev[select]*sqrt(nrow(pca$x)))	#figure out the arrow positions based on loadings scaled by sdev
@@ -32,11 +43,16 @@ pdf('out/pca.pdf',width=5,heig1.1ht=5)
     arrowText<-dimnames(pcaArrows)[[1]] #get rownames of loadings for labels
     par(lheight=.7)
     text(pcaArrows/ratio,sub(' ','\n',sub('\\(.*$','',targetCols[rownames(pcaArrows)])),cex=.8) #label the arrows
+    donorFluidBinary<-list('DO GE UT'=c(TRUE,TRUE),'DO PL UT'=c(TRUE,FALSE),'RE PL UT'=c(FALSE,FALSE))
+    for(dfName in names(donorFluidBinary)){
+      donorFluid<-donorFluidBinary[[dfName]]
+      donorFluidSelector<-hiv[selector,'donor']==donorFluid[1]&hiv[selector,'isGenital']==donorFluid[2]&hiv[selector,'select']=='UT'
+      hull<-expandedHull(-pcaPoints[donorFluidSelector,select],ifelse(hullType=='ellipse',1.02,1.1),hullType)
+      polygon(hull,border=cols2[dfName],col=cols3[dfName],lwd=2.4)
+    }
     points(-pcaPoints[,select[1]],-pcaPoints[,select[2]],bg=cols[as.character(hiv[selector,'fluidSelectDonor'])],col=cols2[as.character(hiv[selector,'fluidSelectDonor'])],pch=21,cex=1.5)
     legend('topright',names(cols),pch=21,col=cols2,pt.bg=cols,inset=.01,pt.cex=1.5)
-    #par(new=TRUE) #plot the next plot directly on top of the current one
-    limits<-range(pcaPoints[,select])*1. #find limits for x and y directions
-    #plot(pcaArrows,type="n",xaxt='n',yaxt='n',xlab='',ylab='',xlim=arrowScale*limits,ylim=arrowScale*limits) #set the axes for easy arrow drawing (messes up any additional plotting on score axes)
+    }
     biplot(pca,choices=select,cex=.25,xlim=-xlim,ylim=-ylim)
   }
 dev.off()
