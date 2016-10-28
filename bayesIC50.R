@@ -259,7 +259,7 @@ for(targetCol in names(targetCols)){
     transform<-function(x)10^x
     logX<-'x'
     xlab<-sprintf('Fold increase in %s',gsub('\n',' ',targetCols[targetCol]))
-    if(targetColTransform[targetCol]=='logit')xlab<-sprintf('%s odds ratio',xlab)
+    if(targetColTransform[targetCol]=='logit')xlab<-sprintf('%s odds',xlab)
   }
   #
   fit<-fits[[targetCol]][['fit']]
