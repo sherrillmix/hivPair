@@ -26,9 +26,10 @@ fisherMethod<-function(ps)1-pchisq(-2*sum(log(ps)),length(ps)*2)
 
 tfs<-phyloDist[grep("TF",rownames(phyloDist)),,drop=FALSE]
 tfs$base<-sub('(v[0-9])?\\.TF','',rownames(tfs))
+tfs$donor<-sapply(tfs$base,function(xx)hiv[hiv$donor & hiv$Pair.ID==unique(hiv[hiv$baseName==xx,'Pair.ID']),'baseName'][1])
 allDist$base<-sapply(strsplit(allDist$name,'_'),'[[',1)
-ps<-sapply(rownames(tfs),function(xx)quantP(allDist[allDist$base==tfs[xx,'base'],'dist'],tfs[xx,'dist']))
-fisherMethod(ps)
+tfs$ps<-sapply(rownames(tfs),function(xx)quantP(allDist[allDist$base==tfs[xx,'donor'],'dist'],tfs[xx,'dist']))
+fisherMethod(tfs$ps)
 
 
 
