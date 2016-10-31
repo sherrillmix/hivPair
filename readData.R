@@ -76,12 +76,14 @@ targetCols<-c(
   'p24.release.No.IFN'='p24 release without IFNa2',
   'Autologous.IC50'='Autologous IC50',
   'Bnaber.IC50'='Bnaber IC50',
-  'vres'='IFNbeta Vres'
+  'vres'='IFNbeta Vres',
+  'Residual.Pooled.Donor.cells..1500U..UT'='IFNa2 Vres'
 )
 targetColTransform<-structure(rep('log',length(targetCols)),names=names(targetCols))
 #targetColTransform['Replicative.capacity.Pooled.Donor.cells.p24.d7']<-'identity'
 targetColTransform[grep('p24.release',names(targetColTransform))]<-'logit'
 targetColTransform[names(targetColTransform)=='vres']<-'logit'
+targetColTransform[names(targetColTransform)=='Residual.Pooled.Donor.cells..1500U..UT']<-'logit'
 targetColCensorDown<-rep(list(c()),length(targetCols))
 names(targetColCensorDown)<-names(targetCols)
 targetColCensorDown[['Autologous.IC50']]<-rep(20,nrow(hiv))
