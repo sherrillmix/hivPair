@@ -72,12 +72,12 @@ targetCols<-c(
   'Replicative.capacity.Pooled.Donor.cells.p24.d7'='Replicative capacity (p24)',
   'IFNa2.Pooled.Donor.cells.IC50..pg..ml'='IFNa2 IC50 (pg/ml)',
   'IFNbeta.Pooled.Donor.cells.IC50..pg.ml'='IFNbeta IC50 (pg/ml)',
+  'vres'='IFNbeta Vres',
+  'Residual.Pooled.Donor.cells..1500U..UT'='IFNa2 Vres',
   'p24.release.With.IFNa..500.U.ml'='p24 release with IFNa2',
   'p24.release.No.IFN'='p24 release without IFNa2',
   'Autologous.IC50'='Autologous IC50',
-  'Bnaber.IC50'='Bnaber IC50',
-  'vres'='IFNbeta Vres',
-  'Residual.Pooled.Donor.cells..1500U..UT'='IFNa2 Vres'
+  'Bnaber.IC50'='Bnaber IC50'
 )
 targetColTransform<-structure(rep('log',length(targetCols)),names=names(targetCols))
 #targetColTransform['Replicative.capacity.Pooled.Donor.cells.p24.d7']<-'identity'
@@ -89,7 +89,7 @@ names(targetColCensorDown)<-names(targetCols)
 targetColCensorDown[['Autologous.IC50']]<-rep(20,nrow(hiv))
 targetColCensorDown[['Bnaber.IC50']]<-rep(20,nrow(hiv))
 targetColCensorDown[['vres']]<-hiv$minVres
-goodTargetCols<-targetCols[1:5]
+goodTargetCols<-targetCols[1:7]
 
 #note using log10 instead of log to make plotting easier
 logit<-function(p)log10(p)-log10(1-p)
