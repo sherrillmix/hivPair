@@ -64,6 +64,7 @@ pdf('out/pca.pdf',width=5,height=5)
     legend('topright',names(cols),pch=21,col=cols2,pt.bg=cols,inset=.01,pt.cex=1.5)
     }
     biplot(pca,choices=select,cex=.25,xlim=-xlim,ylim=-ylim)
+    biplot(pca,choices=select,cex=.25)
   }
 dev.off()
 
@@ -90,8 +91,9 @@ names(cols)<-names(cols2)<-names(cols3)<-sort(unique(hiv$fluidSelectDonor))
 pdf('out/pca2.pdf',width=5,height=5)
   for(subfig2 in c(FALSE,TRUE)){
   select<-1:2
-  xlim <- range(xFlip*pcaPoints[,select[1]])
-  ylim <- range(yFlip*pcaPoints[,select[2]])
+  #xlim <- range(xFlip*pcaPoints[,select[1]])
+  #ylim <- range(yFlip*pcaPoints[,select[2]])
+  xlim <- ylim <- range(yFlip*pcaPoints[,select])
   pcaArrows<-t(t(pca$rotation[,select])*pca$sdev[select]*sqrt(nrow(pca$x)))	#figure out the arrow positions based on loadings scaled by sdev
   xlimArrow<-range(xFlip*pcaArrows[,1])
   ylimArrow<-range(yFlip*pcaArrows[,2])
