@@ -1,5 +1,15 @@
 source('prinComp.R')
 
+selector<-!apply(is.na(hiv[,names(goodTargetCols)]),1,any)
+tmp<-hiv[selector,names(goodTargetCols)]
+rownames(tmp)<-hiv[selector,'Renamed']
+pca<-prcomp(tmp,scale.=TRUE)
+select<-1:3
+pcaPoints<-t(t(pca$x)/pca$sdev/sqrt(nrow(pca$x))) #figure out the point positions based on scores scaled by standard deviations
+pointLim <- range(-pcaPoints[,select])
+pcaArrows<-t(t(-pca$rotation[,select])*pca$sdev[select]*sqrt(nrow(pca$x)))	#figure out the arrow positions based on loadings scaled by sdev
+arrowLim<-range(pcaArrows)
+ratio <- max(arrowLim/xlim)
 
 library(scatterplot3d)
 cols4<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.2)
@@ -14,9 +24,11 @@ library('rgl')
 cols4<-rainbow.lab(length(unique(hiv$fluidSelectDonor)))
 names(cols4)<-unique(hiv$fluidSelectDonor)
 plot3d(pcaPoints[,1:3],col=cols4[as.character(hiv[selector,'fluidSelectDonor'])],type='s',radius=.005,box=FALSE,axes=FALSE,xlab='',ylab='',zlab='')
-for(ii in 1:180){
+apply(pcaArrows,1,function(xx)arrow3d(c(0,0,0),xx/ratio*.8,type='rotation',col='red',n=50,width=.1,thickness=.1,barblen=.02))
+text3d(pcaArrows[,1]/ratio*.8,pcaArrows[,2]/ratio*.8,pcaArrows[,3]/ratio*.8,sub('\\(.*$','',targetCols[rownames(pcaArrows)]))
+for(ii in 1:90){
   message(ii)
-  view3d(userMatrix=rotationMatrix(2*pi*ii/180,1,-1,-1))
+  view3d(userMatrix=rotationMatrix(2*pi*ii/90,1,-1,-1))
   rgl.snapshot(filename=sprintf('out/pcaAnim/%03d.png',ii))
 }
-
+system('convert -delay 8 -loop 0 out/pcaAnim/*.png out/pcaAnim/pca.gif')
