@@ -6,8 +6,11 @@
 \usepackage[top=1in,bottom=1in,right=1in,left=1in]{geometry}
 \setlength{\parindent}{0em}
 \setlength{\parskip}{2em}
+\newcommand{\ifna}{IFN${\alpha 2}$}
+\newcommand{\ifnb}{IFN${\beta}$}
+\newcommand{\icFifty}{IC$_{50}$}
 \begin{document}
-Each variable of interest, e.g. IFN$\alpha$ IC$_{50}$ or Env:RT ratios, was modeled using a Bayesian hierarchical model. The model is based on a linear regression estimating the differences ($\beta$s) between donor plasma viruses and viruses from donor genital fluid or recipient viruses along with the effects of clade and IFN$\alpha$- and IFN$\beta$-selection. Unlike a normal linear regression, this model allows added hierarchy to deal with linked viruses within pairs and includes variance parameters to deal with potential heteroscedasticity among virus populations.
+Each variable of interest, e.g. \ifna{} \icFifty{} or Env:RT ratios, was modeled using a Bayesian hierarchical model. The model is based on a linear regression estimating the differences ($\beta$s) between donor plasma viruses and viruses from donor genital fluid or recipient viruses along with the effects of clade and \ifna{}- and \ifnb{}-selection. Unlike a normal linear regression, this model allows added hierarchy to deal with linked viruses within pairs and includes variance parameters to deal with potential heteroscedasticity among virus populations.
 
 
 Data was first transformed as follows:
@@ -20,12 +23,15 @@ Data was first transformed as follows:
       \hline
       Env/RT                                        & log            \\ 
       Infectivity (RLU/pg RT)                       & log            \\ 
-      Pooled donor Replicative capacity (day 7 p24) & identity       \\ 
-      IFNbeta IC50 (pg/ml)                          & log            \\ 
-      IFNa2 IC50 (pg/ml)                            & log            \\ 
-      p24 release with IFNa2                        & logit          \\ 
-      p24 release without IFNa2                     & logit          \\ 
-      Autologous IC50                               & log            \\ 
+      Pooled donor Replicative capacity (day 7 p24) & log            \\ 
+      \ifna{} \icFifty{} (pg/ml)                    & log            \\ 
+      \ifnb{} \icFifty{} (pg/ml)                    & log            \\ 
+      \ifna{} Vres (pg/ml)                          & logit          \\ 
+      \ifnb{} Vres (pg/ml)                          & logit          \\ 
+      p24 release with \ifna{}                      & logit          \\ 
+      p24 release without \ifna{}                   & logit          \\ 
+      Autologous \icFifty{}                         & log            \\ 
+      Bnaber \icFifty{}                             & log            \\ 
       \hline
 \end{tabular}
 \end{table}
@@ -33,9 +39,9 @@ Data was first transformed as follows:
 
 The $i^\text{th}$ observation for each donor-recipient pair was then modeled as a normal distribution $N(\mu_i,\sigma^2_i)$ with mean $\mu_i$:
 \begin{align*}
-  \mu_i=&\text{base}_{\text{pair}_i} + \beta_{\text{recipient,pair}_i} \mathbbm{1}(\text{recipient}_i) + \beta_{\text{genital,pair}_i} \mathbbm{1}(\text{genital}_i) + \beta_{\text{clade,pair}_i} \mathbbm{1}(\text{cladeB}_i)\mathbbm{1}(\text{recipient}_i)\\
-  &+ \beta_{\text{donorAlpha,pair}_i} \mathbbm{1}(\text{donor}_i \text{ \& alphaSelect}_i) + \beta_{\text{donorBeta,pair}_i} \mathbbm{1}(\text{donor}_i \text{ \& betaSelect}_i) \\
-  &+ \beta_{\text{recipientAlpha,pair}_i} \mathbbm{1}(\text{recipient}_i\text{ \& alphaSelect}_i) + \beta_{\text{recipientBeta,pair}_i} \mathbbm{1}(\text{recipient}_i \text{ \& betaSelect}_i) \\
+  \mu_i&= \text{base}_{\text{pair}_i} + \beta_{\text{recipient,pair}_i} \mathbbm{1}(\text{recipient}_i) + \beta_{\text{genital,pair}_i} \mathbbm{1}(\text{genital}_i) + \beta_{\text{clade,pair}_i} \mathbbm{1}(\text{cladeB}_i)\mathbbm{1}(\text{recipient}_i)\\
+  &\quad+ \beta_{\text{donorAlpha,pair}_i} \mathbbm{1}(\text{donor}_i \text{ \& alphaSelect}_i) + \beta_{\text{donorBeta,pair}_i} \mathbbm{1}(\text{donor}_i \text{ \& betaSelect}_i) \\
+  &\quad+ \beta_{\text{recipientAlpha,pair}_i} \mathbbm{1}(\text{recipient}_i\text{ \& alphaSelect}_i) + \beta_{\text{recipientBeta,pair}_i} \mathbbm{1}(\text{recipient}_i \text{ \& betaSelect}_i) \\
 \end{align*}
 and variance $\sigma^2_i$:
 \[
@@ -47,13 +53,15 @@ and variance $\sigma^2_i$:
     \sigma^2_{\text{donor,pair}_i} & \text{otherwise}\\
   \end{cases}
 \]
-where pair$_i$ indicates the pair identity of the $i^\text{th}$ observation, $\mathbbm{1}()$ is an indicator function that is 1 if True and 0 if False. The $\beta$ are coefficients modeling the change expected for viruses in recipients, in donor genital samples, in recipients from HIV clade B and the effects of IFN$\alpha$- or IFN$\beta$-selection on donor and recipient viruses. So for example, a donor plasma virus $i$ from pair 2 would have mean $\mu_i = \text{base}_{2}$ and an IFN$\alpha$-selected recipient virus from pair 3 (which happened to be clade B) would have mean:
+where pair$_i$ indicates the pair identity of the $i^\text{th}$ observation, $\mathbbm{1}()$ is an indicator function that is 1 if True and 0 if False. The $\beta$ are coefficients modeling the change expected for viruses in recipients, in donor genital samples, in recipients from HIV clade B and the effects of \ifna{}- or \ifnb{}-selection on donor and recipient viruses. So for example, a donor plasma virus $i$ from pair 2 would have mean $\mu_i = \text{base}_{2}$ and an \ifna{}-selected recipient virus from pair 3 (which happened to be clade B) would have mean:
 \[\mu_i=\text{base}_{3} + \beta_{\text{recipient,3}} + \beta_{\text{clade,3}} + \beta_{\text{recipientAlpha,3}}\]
 
 For a trio where one donor transmitted viruses to two separate recipients, recipient parameters were estimated independently for each recipient.
 
-In Autologous IC50, observations less than equal to 20 were censored at 20 (the maximum amount of plasma tolerated by the cells). To model this, the probability of these observations was considered to be:
-\(p(\text{IC50}=20)=\int_{-\infty}^{\log(20)}N(\mu_i,\sigma^2_i)\)
+In Autologous and Bnaber \icFifty{}, observations less than equal to 20 were censored at 20 (the maximum amount of plasma tolerated by the cells). To model this, the probability of these observations was considered to be:
+\[p(\text{\icFifty}=20)=\int_{-\infty}^{\log(20)}N(\mu_i,\sigma^2_i)\]
+In \ifnb Vres, observations at or below the smallest measurement on on the machine were reported as 0.1. To account for this, the probability of these observations was considered to be:
+\[p\left(\text{Vres}=\frac{0.1}{\text{Untreated p24}}\right)=\int_{-\infty}^{\text{logit}\left(\frac{0.1}{\text{Untreated p24}}\right)}N(\mu_i,\sigma^2_i)\]
 
 The coefficients $\beta$ for each pair $j$ come from population-level normal hyperpriors:
 \begin{align*}
@@ -81,7 +89,7 @@ The variance parameters
 $\sigma_{\text{base}}$, $\sigma_{\text{recipient}}$, $\sigma_{\text{genital}}$, $\sigma_{\text{clade}}$, $\sigma_{\text{donorAlpha}}$, $\sigma_{\text{donorBeta}}$, $\sigma_{\text{recipientAlpha}}$, $\sigma_{\text{recipientAlpha}}$,
 $\phi_{\text{donor}}$, $\phi_{\text{donorAlpha}}$, $\phi_{\text{donorBeta}}$, $\phi_{\text{recipient}}$, $\phi_{\text{genital}}$,
 $\theta_{\text{donor}}$, $\theta_{\text{donorAlpha}}$, $\theta_{\text{donorBeta}}$, $\theta_{\text{recipient}}$ and $\theta_{\text{genital}}$ 
-were given a prior of Gamma(1,2) reflecting prior knowledge that the standard deviation in these assays was unlikely to be greater than several logs. For Replicative Capacity, which was modeled on a linear scale, the variance parameters were given a vague prior of Gamma(1,$\frac{1}{100}$).
+were given a prior of Gamma(1,2) reflecting prior knowledge that the standard deviation in these assays was unlikely to be greater than several logs. %For Replicative Capacity, which was modeled on a linear scale, the variance parameters were given a vague prior of Gamma(1,$\frac{1}{100}$).
 
 Plots and statistics are based on the estimated posterior probabilities of the population-level effects $\mu_{\text{recipient}}$, $\mu_{\text{genital}}$, $\mu_{\text{clade}}$, $\mu_{\text{donorAlpha}}$, $\mu_{\text{donorBeta}}$, $\mu_{\text{recipientAlpha}}$ and $\mu_{\text{recipientBeta}}$.
 
