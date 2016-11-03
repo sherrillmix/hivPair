@@ -12,10 +12,13 @@
 \newcommand{\ifnb}{IFN${\beta}$}
 \newcommand{\icFifty}{IC$_{50}$}
 \begin{document}
+\begin{center}
+ \Large\textbf{Bayesian hierarchical regression\\ models of viral properties}
+\end{center}
 \section*{Summary}
 Each viral property, e.g. \ifna{} \icFifty{} or Env/RT ratios, was modeled using a Bayesian hierarchical model.
   The model is based on a linear regression estimating the differences between
-  donor plasma viruses and viruses from donor genital fluid or recipient viruses along with the effects of clade and \ifna{}- and \ifnb{}-selection.
+  donor plasma viruses and viruses from donor genital fluid or recipient plasma viruses along with the effects of HIV subtype and \ifna{}- and \ifnb{}-selection.
   Unlike a normal linear regression, this model allows accounting for
   1) nested measurements within transmission pairs,
   2) multiple transmissions from a single donor,
@@ -52,7 +55,7 @@ Data was first transformed as follows:
 \end{table}
 
 
-The $i^\text{th}$ observation for each donor-recipient pair was then modeled as a normal distribution $N(\mu_i,\sigma^2_i)$ with mean $\mu_i$:
+The observation from each viral isolate $i$ was then modeled as a normal distribution $N(\mu_i,\sigma^2_i)$ with mean $\mu_i$:
 \begin{align*}
   \mu_i&= \text{donor}_{\text{pair}_i} + \beta_{\text{recipient,pair}_i} \mathbbm{1}(\text{recipient}_i) + \beta_{\text{genital,pair}_i} \mathbbm{1}(\text{genital}_i)\\
   &\quad+ \beta_{\text{clade,pair}_i} \mathbbm{1}(\text{cladeB}_i)\mathbbm{1}(\text{recipient}_i) + \beta_{\text{donorAlpha,pair}_i} \mathbbm{1}(\text{donor}_i \text{ \& alphaSelect}_i)\\
@@ -70,17 +73,17 @@ and variance $\sigma^2_i$:
   \end{cases}
 \]
 where pair$_i$ indicates the pair identity of the $i^\text{th}$ observation,
-  $\text{donor}_j$ is the estimated mean of untreated donor plasma viral isolates from pair $j$,
-  $\mathbbm{1}()$ is an indicator function that is 1 if True and 0 if False.
-  The $\beta$ are coefficients modeling the change expected for viruses in recipients, in donor genital samples,
-  in recipients from HIV clade B and the effects of \ifna{}- or \ifnb{}-selection on donor and recipient viruses.
+  $\text{donor}_j$ is the estimated mean of untreated donor plasma viral isolates from pair $j$
+  and $\mathbbm{1}()$ is an indicator function that is 1 if True and 0 if False.
+  The various $\beta$ are coefficients modeling the change expected for viruses in recipients, in donor genital samples,
+  in recipients from HIV clade B and the effects of \ifna{}- or \ifnb{}-selection on donor or recipient viruses.
   So for example, a donor plasma virus $i$ from pair 2 would have mean $\mu_i = \text{donor}_{2}$
   and an \ifna{}-selected recipient virus from pair 3 (which happened to be clade B) would have mean:
 \[\mu_i=\text{donor}_{3} + \beta_{\text{recipient,3}} + \beta_{\text{clade,3}} + \beta_{\text{recipientAlpha,3}}\]
 
 For a trio where one donor transmitted viruses to two separate recipients, recipient parameters were estimated independently for each recipient.
 
-In Autologous and Bnaber \icFifty{}, observations less than equal to 20 were censored at 20 (the maximum amount of plasma tolerated by the cells).
+In Autologous and Bnaber \icFifty{}, observations less than or equal to 20 were censored at 20 (the maximum amount of plasma tolerated by the cells).
   To model this, the probability of these observations was considered to be:
 \[p(\text{\icFifty}=20)=\int_{-\infty}^{\log(20)}N(\mu_i,\sigma^2_i)\]
 
@@ -125,7 +128,30 @@ Markov Chain Monte Carlo sampling of the posterior probability distributions of 
   Code is available at:\\
   \url{https://github.com/sherrillmix/hivPair/blob/master/bayesIC50.R}.
 
-\section{Comparison}
+\section{Simple comparison}
+As an example of a comparison of the Bayesian estimates with a simpler analysis, we can look at the estimated change in \ifnb{} \icFifty{} between untreated donor plasma viruses and \ifnb-selected donor plasma viruses (Figure 3). We observed $\log_{10}(\text{\icFifty})$ in both untreated and \ifnb-selection viral isolates for 3 donors with averages:
+%withAs(xx=hiv[hiv$donor&hiv$select %in% c("UT","BE")&!hiv$isGenital,],tapply(log10(xx$IFNbeta.Pooled.Donor.cells.IC50..pg.ml),list(xx$baseName,xx$select),mean))
+\begin{table}[ht]
+\centering
+  \begin{tabular}{|l|r|r|r|}
+    \hline
+    Donor  & Untreated & \ifnb{}-selected & Difference \\ 
+    \hline
+    CH148  & -4.269    & -2.831           & 1.438      \\ 
+    CH492  & -4.203    & -2.717           & 1.487      \\ 
+    CH596  & -4.162    & -2.820           & 1.343      \\ 
+    \hline
+  \end{tabular}\\
+\end{table}
+
+The simplest estimate would be to take the average, 1.423,
+and the standard deviation, 0.0733,
+of the three differences and estimate the 95\% confidence interval on the mean as: 
+\[1.423\pm \frac{1.96\times 0.0733}{\sqrt{3}}=1.423 \pm 0.0829\]
+Or equivalently an estimate that \ifnb-selected donor viruses have an \icFifty{} 26.5$\times$ (95\% confidence interval: 21.9--32.0$\times$) higher than untreated isolates.
+
+From the Bayesian model, we obtained estimates of 20.7$\times$ (95\% credible interval: 11.0--36.2$\times$) higher \icFifty{}.
+So the Bayesian model is being more conservative with wider intervals in its estimation due to incorporating uncertainty in our estimates of untreated and \ifnb-selected \icFifty{} for each donor.
 
 
 \end{document}
