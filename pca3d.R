@@ -31,4 +31,4 @@ for(ii in 1:90){
   view3d(userMatrix=rotationMatrix(2*pi*ii/90,1,-1,-1))
   rgl.snapshot(filename=sprintf('out/pcaAnim/%03d.png',ii))
 }
-system('convert -delay 8 -loop 0 out/pcaAnim/*.png out/pcaAnim/pca.gif')
+system('convert -delay 8 -loop 0 -layers optimize out/pcaAnim/*.png out/pcaAnim/pca.gif')
