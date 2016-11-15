@@ -58,9 +58,13 @@ Data was first transformed as follows:
 
 The observation from each viral isolate $i$ was then modeled as a normal distribution $N(\mu_i,\sigma^2_i)$ with mean $\mu_i$:
 \begin{align*}
-  \mu_i&= \text{donor}_{\text{pair}_i} + \beta_{\text{recipient,pair}_i} \mathbbm{1}(\text{recipient}_i) + \beta_{\text{genital,pair}_i} \mathbbm{1}(\text{genital}_i)\\
-  &\quad+ \beta_{\text{clade,pair}_i} \mathbbm{1}(\text{cladeB}_i)\mathbbm{1}(\text{recipient}_i) + \beta_{\text{donorAlpha,pair}_i} \mathbbm{1}(\text{donor}_i \text{ \& alphaSelect}_i)\\
-  &\quad + \beta_{\text{donorBeta,pair}_i} \mathbbm{1}(\text{donor}_i \text{ \& betaSelect}_i) + \beta_{\text{recipientAlpha,pair}_i} \mathbbm{1}(\text{recipient}_i\text{ \& alphaSelect}_i)\\
+  \mu_i&= \text{donor}_{\text{pair}_i}\\
+  &\quad+ \beta_{\text{recipient,pair}_i} \mathbbm{1}(\text{recipient}_i)\\
+  &\quad+ \beta_{\text{genital,pair}_i} \mathbbm{1}(\text{genital}_i)\\
+  &\quad+ \beta_{\text{clade,pair}_i} \mathbbm{1}(\text{cladeB}_i)\mathbbm{1}(\text{recipient}_i)\\
+  &\quad+ \beta_{\text{donorAlpha,pair}_i} \mathbbm{1}(\text{donor}_i \text{ \& alphaSelect}_i)\\
+  &\quad+ \beta_{\text{donorBeta,pair}_i} \mathbbm{1}(\text{donor}_i \text{ \& betaSelect}_i)\\
+  &\quad+ \beta_{\text{recipientAlpha,pair}_i} \mathbbm{1}(\text{recipient}_i\text{ \& alphaSelect}_i)\\
   &\quad+ \beta_{\text{recipientBeta,pair}_i} \mathbbm{1}(\text{recipient}_i \text{ \& betaSelect}_i) \\
 \end{align*}
 and variance $\sigma^2_i$:
@@ -115,7 +119,7 @@ and coefficients $\sigma$ from population-level normal hyperpriors:
 The effect hyperparameters
 $\mu_{\text{recipient}}$, $\mu_{\text{genital}}$, $\mu_{\text{clade}}$, $\mu_{\text{donorAlpha}}$, $\mu_{\text{donorBeta}}$, $\mu_{\text{recipientAlpha}}$ and $\mu_{\text{recipientBeta}}$ were all given a flat prior probability.
 The variance parameters 
-$\sigma_{\text{donor}}$, $\sigma_{\text{recipient}}$, $\sigma_{\text{genital}}$, $\sigma_{\text{clade}}$, $\sigma_{\text{donorAlpha}}$, $\sigma_{\text{donorBeta}}$, $\sigma_{\text{recipientAlpha}}$, $\sigma_{\text{recipientAlpha}}$,
+$\sigma_{\text{donor}}$, $\sigma_{\text{recipient}}$, $\sigma_{\text{genital}}$, $\sigma_{\text{clade}}$, $\sigma_{\text{donorAlpha}}$, $\sigma_{\text{donorBeta}}$, $\sigma_{\text{recipientAlpha}}$, $\sigma_{\text{recipientBeta}}$,
 $\phi_{\text{donor}}$, $\phi_{\text{donorAlpha}}$, $\phi_{\text{donorBeta}}$, $\phi_{\text{recipient}}$, $\phi_{\text{genital}}$,
 $\theta_{\text{donor}}$, $\theta_{\text{donorAlpha}}$, $\theta_{\text{donorBeta}}$, $\theta_{\text{recipient}}$ and $\theta_{\text{genital}}$ 
 were given a prior of Gamma(1,2) reflecting prior knowledge that the standard deviation in these assays was unlikely to be greater than several logs.
