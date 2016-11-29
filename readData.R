@@ -21,6 +21,7 @@ hiv$sampleSelect<-paste(hiv$donorRec,hiv$Pair.ID,hiv$select)
 hiv$sampleFluid<-paste(hiv$donorRec,hiv$Pair.ID,hiv$fluid)
 hiv$sampleFluidSelect<-paste(hiv$donorRec,hiv$Pair.ID,hiv$fluid,hiv$select)
 hiv$fluidSelectDonor<-paste(ifelse(hiv$donor,'DO','RE'),ifelse(hiv$fluid=="PL",'PL','GE'),hiv$select)
+hiv$fluidSelectDonor2<-paste(ifelse(hiv$donor,'Donor','Recipient'),ifelse(hiv$fluid=="PL",'Plasma','Genital'),ifelse(hiv$select=='UT','Untreated',ifelse(hiv$select=='A2','IFNA2','IFNB')))
 hiv$seqId<-sprintf('seq%d',1:nrow(hiv))
 hiv$baseName<-sub('\\..*$','',hiv$Renamed)
 hiv$nameFluidSelect<-paste(hiv$baseName,hiv$fluid,hiv$select)
@@ -95,4 +96,4 @@ goodTargetCols<-targetCols[1:7]
 logit<-function(p)log10(p)-log10(1-p)
 invLogit<-function(x)10^(x)/(10^(x)+1)
 
-
+pairColors<-c('3'='#999999','4'='#99CC33','7'='#CC6699','1'='#9999CC','2'='#99CCCC','5'='#CC9966','6'='#FF9966')
