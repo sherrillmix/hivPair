@@ -43,4 +43,10 @@ dev.off()
 stopCluster(cl)
 
 
-withAs(xx=hiv[hiv$select!='UT'&selector&!hiv$isGenital,],vpPlot(xx$donor,xx$IFNbeta.Pooled.Donor.cells.IC50..pg.ml))
+pdf('out/rocExample.pdf',width=3,height=4)
+par(mar=c(2.2,3.5,.5,.2))
+withAs(xx=hiv[hiv$select=='UT'&selector&!hiv$isGenital,],vpPlot(ifelse(xx$donor,'Donor','Recipient'),xx$Env.RT,offsetXArgs=list(width=.2),ylab='Env content',las=1,yaxt='n',pch=21,bg=ifelse(xx$donor,'#FF000033','#0000FF33'),col='#00000033',log='y',mgp=c(2.5,1,0)))
+logAxis(2,las=1)
+withAs(xx=hiv[hiv$select=='UT'&selector&!hiv$isGenital,],vpPlot(ifelse(xx$donor,'Donor','Recipient'),xx$IFNbeta.Pooled.Donor.cells.IC50..pg.ml,offsetXArgs=list(width=.2),ylab='IFNb IC50',las=1,yaxt='n',pch=21,bg=ifelse(xx$donor,'#FF000033','#0000FF33'),col='#00000033',log='y',mgp=c(2.5,1,0)))
+logAxis(2,las=1)
+dev.off()
