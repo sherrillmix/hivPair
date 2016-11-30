@@ -74,7 +74,7 @@ for(targetCol in names(targetCols)){
     pairPos[as.character(pair)]
   }))
   catPos<-structure(1:length(unique(hiv$fluidSelectDonor2)),names=unique(hiv$fluidSelectDonor2[order(hiv$donor,hiv$select=='UT',hiv$fluid=='PL',hiv$select=='A2',decreasing=TRUE)]))
-  pdf(sprintf('out/boxWhisker/7line_%s.pdf',targetCol),width=8,height=5)
+  pdf(sprintf('out/boxWhisker/7line_%s.pdf',targetCol),width=8,height=4)
     par(mar=c(3.2,5,.1,.1))
     if(targetColTransform[targetCol]=='log'){
       logY<-'y'
