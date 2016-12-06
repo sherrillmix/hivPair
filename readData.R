@@ -75,10 +75,10 @@ targetCols<-c(
   'IFNbeta.Pooled.Donor.cells.IC50..pg.ml'='IFNbeta IC50 (pg/ml)',
   'Residual.Pooled.Donor.cells..1500U..UT'='IFNa2 Vres',
   'vres'='IFNbeta Vres',
-  'p24.release.With.IFNa..500.U.ml'='p24 release with IFNa2',
-  'p24.release.No.IFN'='p24 release without IFNa2',
-  'Autologous.IC50'='Autologous IC50',
-  'Bnaber.IC50'='Bnaber IC50'
+  'p24.release.No.IFN'='p24 release'
+  #'p24.release.With.IFNa..500.U.ml'='p24 release with IFNa2',
+  #'Autologous.IC50'='Autologous IC50',
+  #'Bnaber.IC50'='Bnaber IC50'
 )
 targetColTransform<-structure(rep('log',length(targetCols)),names=names(targetCols))
 #targetColTransform['Replicative.capacity.Pooled.Donor.cells.p24.d7']<-'identity'
@@ -97,3 +97,13 @@ logit<-function(p)log10(p)-log10(1-p)
 invLogit<-function(x)10^(x)/(10^(x)+1)
 
 pairColors<-c('3'='#999999','4'='#99CC33','7'='#CC6699','1'='#9999CC','2'='#99CCCC','5'='#CC9966','6'='#FF9966')
+
+#output final csv
+desiredCols<-c('Name'='Renamed','Subtype'='Subtype','Gender'='Gender','Donor/Recipient'='Donor.or.Recipient','Pair ID'='Pair.ID','Fluid'='fluid','Selection'='select',structure(names(targetCols),.Names=targetCols),'Censored IFNbeta Vres'='isMinVres')
+finalCsv<-hiv[,desiredCols]
+names(finalCsv)<-names(desiredCols)
+finalCsv$Name[finalCsv$Fluid!='PL']<-sub('\\.UT\\.','.',finalCsv$Name[finalCsv$Fluid!='PL'])
+write.csv(finalCsv,'out/Iyer2016_Data.csv',row.names=FALSE)
+
+
+
