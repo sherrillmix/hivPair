@@ -1,4 +1,4 @@
-Name,Subtype,Gender,Donor/Recipient,Pair ID,Fluid,Selection,Env/RT  ratio,Infectivity (RLU/pg RT),Replicative capacity (ng p24/ml),IFNa2 IC50 (pg/ml),IFNbeta IC50 (pg/ml),IFNa2 Vres,IFNbeta Vres,p24 release,Censored IFNbeta Vres
+Name,Subtype,Gender,Donor/Recipient,Pair ID,Fluid,Selection,Env/RT ratio,Infectivity (RLU/pg RT),Replicative capacity (ng p24/ml),IFNa2 IC50 (pg/ml),IFNbeta IC50 (pg/ml),IFNa2 Vres,IFNbeta Vres,p24 release,Censored IFNbeta Vres
 CH1064.PL.080409.A2.01,C,Female,Donor,7,PL,A2,0.200738,3149.8775,414.32384,0.772575292,0.00186001,19.07872381,0.032030401,NA,TRUE
 CH1064.PL.080409.A2.02,C,Female,Donor,7,PL,A2,0.728996,2853.8625,312.201925,0.781010549,0.000116271,21.31372386,0.043827932,NA,TRUE
 CH1064.PL.080409.A2.03,C,Female,Donor,7,PL,A2,0.5501142,2419.140033,199.15425,0.700213771,0.000714082,12.87424725,0.450913987,36.80432721,FALSE
