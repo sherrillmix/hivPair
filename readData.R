@@ -1,7 +1,12 @@
+#selection abbreviations
+selectionExpand<-c('UT'='Untreated','A2'='IFNA2','BE'='IFNB')
+
 #read data
 hiv<-read.csv('data/Iyer2016_Data.csv',stringsAsFactors=FALSE,check.names=FALSE)
 hiv$baseName<-sub('\\..*$','',hiv$Name)
-hiv$fluidSelectDonor<-paste(ifelse(hiv[,"Donor/Recipient"]=='Donor','Donor','Recipient'),ifelse(hiv$Fluid=="PL",'Plasma','Genital'),ifelse(hiv$Selection=='UT','Untreated',ifelse(hiv$Selection=='A2','IFNA2','IFNB')))
+hiv$isGenital<-hiv$Fluid!='PL'
+hiv$isDonor<-hiv[,'Donor/Recipient']=='Donor'
+hiv$fluidSelectDonor<-paste(ifelse(hiv$isDonor,'Donor','Recipient'),ifelse(hiv$isGenital,'Genital','Plasma'),selectionExpand[hiv$Selection])
 
 #columns with data
 targetCols<-c(
@@ -14,6 +19,7 @@ targetCols<-c(
   "IFNbeta Vres",
   "p24 release"
 )
+goodTargetCols<-targetCols[apply(is.na(hiv[,targetCols]),2,mean)<.1]
 
 #transformations for each variable
 targetColTransform<-structure(rep('log',length(targetCols)),names=targetCols)
