@@ -1,7 +1,7 @@
 library(vipor)
+library(cluster)
 if(!exists('hiv'))source('readData.R')
 expandedHull<-function(xys,magnification=1,type=c('convex','ellipse')){
-  library(cluster)
   type<-match.arg(type)
   centroid<-apply(xys,2,mean)
   magnified<-t(apply(xys,1,function(xy)(xy-centroid)*magnification+centroid))
@@ -10,23 +10,20 @@ expandedHull<-function(xys,magnification=1,type=c('convex','ellipse')){
   else stop("Unknown type")
 }
 
-selector<-!apply(is.na(hiv[,names(goodTargetCols)]),1,any)
-tmp<-hiv[selector,names(goodTargetCols)]
-rownames(tmp)<-hiv[selector,'Renamed']
+selector<-!apply(is.na(hiv[,goodTargetCols]),1,any)
+tmp<-hiv[selector,goodTargetCols]
+rownames(tmp)<-hiv[selector,'Name']
 pca<-prcomp(tmp,scale.=TRUE)
 pcaPoints<-t(t(pca$x)/pca$sdev/sqrt(nrow(pca$x))) #figure out the point positions based on scores scaled by standard deviations
 importance<-summary(pca)$importance[2,]
-cols<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.6)
-#pch<-structure(c(21,22,22),names=c('PL','SE','CV'))
-pch<-structure(c(21,21,21),names=c('PL','SE','CV'))
-cols2<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.8)
-cols3<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.02)
+cols<-rainbow(length(unique(hiv$fluidSelectDonor)),alpha=.6)
+cols2<-rainbow(length(unique(hiv$fluidSelectDonor)),alpha=.8)
+cols3<-rainbow(length(unique(hiv$fluidSelectDonor)),alpha=.02)
 names(cols)<-names(cols2)<-names(cols3)<-sort(unique(hiv$fluidSelectDonor))
+
 pdf('out/pca.pdf',width=5,height=5)
   for(select in list(1:2,2:3,3:4,4:5)){
     for(hullType in c('ellipse','convex')){
-    #xlim <- range(-pcaPoints[,select[1]])
-    #ylim <- range(-pcaPoints[,select[2]])
     xlim <- range(-pcaPoints[,select])
     ylim <- range(-pcaPoints[,select])
     pcaArrows<-t(t(-pca$rotation[,select])*pca$sdev[select]*sqrt(nrow(pca$x)))	#figure out the arrow positions based on loadings scaled by sdev
@@ -48,18 +45,18 @@ pdf('out/pca.pdf',width=5,height=5)
     donorFluidBinary<-list('DO GE UT'=c(TRUE,TRUE),'DO PL UT'=c(TRUE,FALSE),'RE PL UT'=c(FALSE,FALSE))
     for(dfName in names(donorFluidBinary)){
       donorFluid<-donorFluidBinary[[dfName]]
-      donorFluidSelector<-hiv[selector,'donor']==donorFluid[1]&hiv[selector,'isGenital']==donorFluid[2]&hiv[selector,'select']=='UT'
+      donorFluidSelector<-hiv[selector,'isDonor']==donorFluid[1]&hiv[selector,'isGenital']==donorFluid[2]&hiv[selector,'Selection']=='UT'
       hull<-expandedHull(-pcaPoints[donorFluidSelector,select],ifelse(hullType=='ellipse',1.02,1.1),hullType)
       polygon(hull,border=cols2[dfName],col=cols3[dfName],lwd=2.4)
     }
     points(-pcaPoints[,select[1]],-pcaPoints[,select[2]],bg=cols[as.character(hiv[selector,'fluidSelectDonor'])],col=cols2[as.character(hiv[selector,'fluidSelectDonor'])],pch=21,cex=1.5)
-    recSelect<-!hiv[selector,'donor']&hiv[selector,'fluid']=='PL'&hiv[selector,'select']=='UT'
-    donSelect<-hiv[selector,'donor']&hiv[selector,'fluid']=='PL'&hiv[selector,'select']=='UT'
-    centroids<-cbind(tapply(pcaPoints[recSelect,select[1]],hiv[selector,'Pair.ID'][recSelect],mean),tapply(pcaPoints[recSelect,select[2]],hiv[selector,'Pair.ID'][recSelect],mean))
+    recSelect<-!hiv[selector,'isDonor']&hiv[selector,'Fluid']=='PL'&hiv[selector,'Selection']=='UT'
+    donSelect<-hiv[selector,'isDonor']&hiv[selector,'Fluid']=='PL'&hiv[selector,'Selection']=='UT'
+    centroids<-cbind(tapply(pcaPoints[recSelect,select[1]],hiv[selector,'Pair ID'][recSelect],mean),tapply(pcaPoints[recSelect,select[2]],hiv[selector,'Pair ID'][recSelect],mean))
     text(-centroids,rownames(centroids),cex=.8)
     for(pair in rownames(centroids)){
-      segments(-centroids[pair,1],-centroids[pair,2],-pcaPoints[hiv[selector,'Pair.ID']==pair&recSelect,select[1]],-pcaPoints[hiv[selector,'Pair.ID']==pair&recSelect,select[2]],col='#00000033',lwd=.5)
-      segments(-centroids[pair,1],-centroids[pair,2],-pcaPoints[hiv[selector,'Pair.ID']==pair&donSelect,select[1]],-pcaPoints[hiv[selector,'Pair.ID']==pair&donSelect,select[2]],col='#00000033',lwd=.5,lty=2)
+      segments(-centroids[pair,1],-centroids[pair,2],-pcaPoints[hiv[selector,'Pair ID']==pair&recSelect,select[1]],-pcaPoints[hiv[selector,'Pair ID']==pair&recSelect,select[2]],col='#00000033',lwd=.5)
+      segments(-centroids[pair,1],-centroids[pair,2],-pcaPoints[hiv[selector,'Pair ID']==pair&donSelect,select[1]],-pcaPoints[hiv[selector,'Pair ID']==pair&donSelect,select[2]],col='#00000033',lwd=.5,lty=2)
     }
     legend('topright',names(cols),pch=21,col=cols2,pt.bg=cols,inset=.01,pt.cex=1.5)
     }
@@ -69,30 +66,22 @@ pdf('out/pca.pdf',width=5,height=5)
 dev.off()
 
 
-selector<-!apply(is.na(hiv[,names(goodTargetCols)]),1,any)
+selector<-!apply(is.na(hiv[,goodTargetCols]),1,any)
 xFlip<--1
 yFlip<- -1
-subselect<-hiv[selector,]$select=='UT'
-#use all viruses
-scaled<-apply(hiv[selector,names(goodTargetCols)],2,function(x,subselect)(x-mean(x[subselect]))/sd(x[subselect]),rep(TRUE,sum(selector)))
-#use all viruses
-#pca<-prcomp(scaled[subselect,],scale.=FALSE)
+subselect<-hiv[selector,]$Selection=='UT'
+scaled<-apply(hiv[selector,goodTargetCols],2,function(x,subselect)(x-mean(x[subselect]))/sd(x[subselect]),rep(TRUE,sum(selector)))
 pca<-prcomp(scaled,scale.=FALSE)
 pcaPoints<-t(t(scaled %*% pca$rotation)/pca$sdev/sqrt(nrow(pca$x))) #figure out the point positions based on scores scaled by standard deviations
-#zz<-var(scaled[!subselect,] %*% pca$rotation)[diag(5)==1]
-#zz/sum(zz)
 importance<-summary(pca)$importance[2,]
-cols<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.6)
-#pch<-structure(c(21,22,22),names=c('PL','SE','CV'))
+cols<-rainbow(length(unique(hiv$fluidSelectDonor)),alpha=.6)
 pch<-structure(c(21,21,21),names=c('PL','SE','CV'))
-cols2<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.8)
-cols3<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.02)
+cols2<-rainbow(length(unique(hiv$fluidSelectDonor)),alpha=.8)
+cols3<-rainbow(length(unique(hiv$fluidSelectDonor)),alpha=.02)
 names(cols)<-names(cols2)<-names(cols3)<-sort(unique(hiv$fluidSelectDonor))
 pdf('out/pca2.pdf',width=5,height=5)
   for(subfig2 in c(FALSE,TRUE)){
   select<-1:2
-  #xlim <- range(xFlip*pcaPoints[,select[1]])
-  #ylim <- range(yFlip*pcaPoints[,select[2]])
   xlim <- ylim <- range(yFlip*pcaPoints[,select])
   pcaArrows<-t(t(pca$rotation[,select])*pca$sdev[select]*sqrt(nrow(pca$x)))	#figure out the arrow positions based on loadings scaled by sdev
   xlimArrow<-range(xFlip*pcaArrows[,1])
@@ -115,7 +104,7 @@ pdf('out/pca2.pdf',width=5,height=5)
   donorFluidBinary<-list('DO GE UT'=c(TRUE,TRUE),'DO PL UT'=c(TRUE,FALSE),'RE PL UT'=c(FALSE,FALSE))
   for(dfName in names(donorFluidBinary)){
     donorFluid<-donorFluidBinary[[dfName]]
-    donorFluidSelector<-hiv[selector,'donor']==donorFluid[1]&hiv[selector,'isGenital']==donorFluid[2]&hiv[selector,'select']=='UT'
+    donorFluidSelector<-hiv[selector,'isDonor']==donorFluid[1]&hiv[selector,'isGenital']==donorFluid[2]&hiv[selector,'Selection']=='UT'
     hull<-expandedHull(pcaPoints[donorFluidSelector,select],1,'ellipse')
     polygon(xFlip*hull[,1],yFlip*hull[,2],border=cols2[dfName],col=cols3[dfName],lwd=2.4)
   }
@@ -129,23 +118,23 @@ dev.off()
 
 
 #distance calculating
-#scaled<-apply(hiv[selector,names(goodTargetCols)],2,function(x)(x-mean(x))/sd(x))
 scaled<-pcaPoints[,1:2]
-sampleNames<-withAs(xx=hiv[selector,],paste(xx$sampleFluidSelect,ave(xx$sampleFluidSelect,xx$sampleFluidSelect,FUN=function(x)1:length(x))))
+sampleNames<-paste(hiv[selector,'sampleFluidSelect'],ave(hiv[selector,'sampleFluidSelect'],hiv[selector,'sampleFluidSelect'],FUN=function(x)1:length(x)))
 rownames(scaled)<-sampleNames
 dists<-dist(scaled)
 distMat<-as.matrix(dists)
 
 
-ids<-withAs(xx=hiv[selector,],list(
-  donor=sampleNames[xx$donor&xx$select=='UT'&xx$fluid=='PL']
-  ,donorGenital=sampleNames[xx$donor&xx$select=='UT'&xx$fluid!='PL']
-  ,donorAlpha=sampleNames[xx$donor&xx$select=='A2'&xx$fluid=='PL']
-  ,donorBeta=sampleNames[xx$donor&xx$select=='BE'&xx$fluid=='PL']
-  ,recAlpha=sampleNames[!xx$donor&xx$select=='A2'&xx$fluid=='PL']
-  ,recBeta=sampleNames[!xx$donor&xx$select=='BE'&xx$fluid=='PL']
-  ,recipient=sampleNames[!xx$donor&xx$select=='UT']
-))
+xx<-hiv[selector,]
+ids<-list(
+  donor=sampleNames[xx$isDonor&xx$Selection=='UT'&xx$Fluid=='PL']
+  ,donorGenital=sampleNames[xx$isDonor&xx$Selection=='UT'&xx$Fluid!='PL']
+  ,donorAlpha=sampleNames[xx$isDonor&xx$Selection=='A2'&xx$Fluid=='PL']
+  ,donorBeta=sampleNames[xx$isDonor&xx$Selection=='BE'&xx$Fluid=='PL']
+  ,recAlpha=sampleNames[!xx$isDonor&xx$Selection=='A2'&xx$Fluid=='PL']
+  ,recBeta=sampleNames[!xx$isDonor&xx$Selection=='BE'&xx$Fluid=='PL']
+  ,recipient=sampleNames[!xx$isDonor&xx$Selection=='UT']
+)
 
 distList<-lapply(ids,function(xx,distMat,recipientIds){
   select<-distMat[xx,recipientIds]
@@ -159,7 +148,7 @@ par(mar=c(7.2,4,.1,.1))
   vpPlot(factor(rep(names(distList),sapply(distList,length)),levels=names(distList)),unlist(distList),las=3,cex=.5,col=NA,bg='#00000066',pch=21,ylab='Distance to recipient samples')
 dev.off()
 
-pairRecDist<-unlist(ave(split(cbind(scaled,withAs(xx=hiv[selector,],!xx$donor&xx$fluid=='PL'&xx$select=='UT')),1:nrow(scaled)),hiv[selector,'Pair.ID'],FUN=function(df){
+pairRecDist<-unlist(ave(split(cbind(scaled,!hiv[selector,'isDonor']&hiv[selector,'Fluid']=='PL'&hiv[selector,'Selection']=='UT'),1:nrow(scaled)),hiv[selector,'Pair ID'],FUN=function(df){
   df<-do.call(rbind,df)
   select<-df[,ncol(df)]==1
   df<-df[,-ncol(df)]
@@ -168,27 +157,21 @@ pairRecDist<-unlist(ave(split(cbind(scaled,withAs(xx=hiv[selector,],!xx$donor&xx
   return(apply(recipientDiff^2,1,sum))
 }))
 
-recipientCentroid<-apply(scaled[withAs(xx=hiv[selector,],!xx$donor&xx$fluid=='PL'&xx$select=='UT'),],2,mean)
+recipientCentroid<-apply(scaled[!hiv[selector,'isDonor']&hiv[selector,'Fluid']=='PL'&hiv[selector,'Selection']=='UT',],2,mean)
 recipientDiff<-t(t(scaled)-recipientCentroid)
 recipientDist<-apply(recipientDiff^2,1,sum)
 
-cols<-rainbow.lab(length(unique(hiv$Pair.ID)),alpha=.7)
-names(cols)<-sort(unique(hiv$Pair.ID))
+cols<-rainbow(length(unique(hiv[,'Pair ID'])),alpha=.7)
+names(cols)<-sort(unique(hiv[,'Pair ID']))
 pdf('out/centroidDist.pdf')
   par(mar=c(5.2,4,.1,.1))
-  vpPlot(factor(hiv[selector,'fluidSelectDonor'],levels=unique(hiv$fluidSelectDonor[order(hiv$donor,hiv$select=='UT',hiv$fluid=='PL',hiv$select=='A2',decreasing=TRUE)])),recipientDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair.ID'])],pch=21,ylab='Distance to recipient samples centroid',las=2)
+  vpPlot(factor(hiv[selector,'fluidSelectDonor'],levels=unique(hiv$fluidSelectDonor[order(hiv$isDonor,hiv$Selection=='UT',hiv$Fluid=='PL',hiv$Selection=='A2',decreasing=TRUE)])),recipientDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair ID'])],pch=21,ylab='Distance to recipient samples centroid',las=2)
   legend('topright',names(cols),pch=21,pt.bg=cols,col=NA,inset=.01,title='Pair',ncol=2)
-  vpPlot(factor(hiv[selector,'fluidSelectDonor'],levels=unique(hiv$fluidSelectDonor[order(hiv$donor,hiv$select=='UT',hiv$fluid=='PL',hiv$select=='A2',decreasing=TRUE)])),pairRecDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair.ID'])],pch=21,ylab='Distance to within-pair recipient centroid',las=2,cex=2)
+  vpPlot(factor(hiv[selector,'fluidSelectDonor'],levels=unique(hiv$fluidSelectDonor[order(hiv$isDonor,hiv$Selection=='UT',hiv$Fluid=='PL',hiv$Selection=='A2',decreasing=TRUE)])),pairRecDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair ID'])],pch=21,ylab='Distance to within-pair recipient centroid',las=2,cex=2)
   legend('topright',names(cols),pch=21,pt.bg=cols,col=NA,inset=.01,title='Pair',ncol=2,cex=2)
-  pos<-vpPlot(factor(hiv[selector,'fluidSelectDonor'],levels=unique(hiv$fluidSelectDonor[order(hiv$donor,hiv$select=='UT',hiv$fluid=='PL',hiv$select=='A2',decreasing=TRUE)])),pairRecDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair.ID'])],pch=21,ylab='Distance to within-pair recipient centroid',las=2)
+  pos<-vpPlot(factor(hiv[selector,'fluidSelectDonor'],levels=unique(hiv$fluidSelectDonor[order(hiv$isDonor,hiv$Selection=='UT',hiv$Fluid=='PL',hiv$Selection=='A2',decreasing=TRUE)])),pairRecDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair ID'])],pch=21,ylab='Distance to within-pair recipient centroid',las=2)
   legend('topright',names(cols),pch=21,pt.bg=cols,col=NA,inset=.01,title='Pair',ncol=2)
   text(pos,pairRecDist,hiv[selector,'Renamed'],cex=.2) 
 dev.off()
-out<-hiv[selector,c('Renamed','Original.name','select','fluid','donorRec')]
-out$singleDist<-recipientDist
-out$pairDist<-pairRecDist
-write.csv(out,'out/centroidDist.csv',row.names=FALSE)
-
-pdf('out/tree.pdf',height=50,width=20);par(mar=c(4,1,1,10));plot(as.dendrogram(hclust(dists)),horiz=TRUE);dev.off()
 
 

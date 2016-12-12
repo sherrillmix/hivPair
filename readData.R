@@ -7,6 +7,7 @@ hiv$baseName<-sub('\\..*$','',hiv$Name)
 hiv$isGenital<-hiv$Fluid!='PL'
 hiv$isDonor<-hiv[,'Donor/Recipient']=='Donor'
 hiv$fluidSelectDonor<-paste(ifelse(hiv$isDonor,'Donor','Recipient'),ifelse(hiv$isGenital,'Genital','Plasma'),selectionExpand[hiv$Selection])
+hiv$sampleFluidSelect<-paste(sub(' ','-',hiv[,'Donor/Recipient']),hiv[,'Pair ID'],hiv[,'Fluid'],hiv[,'Selection'])
 
 #columns with data
 targetCols<-c(
