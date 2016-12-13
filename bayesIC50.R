@@ -427,9 +427,9 @@ recipientMinus2Sd<-lapply(names(targetCols),function(targetCol){
   dim(sims)<-c(prod(dim(sims)[c(1,2)]),dim(sims)[3])
   colnames(sims)<-dimnames(as.array(fit))[[3]]
   converted<-convertCols(
-    list('recipients\\[[0-9]+\\]',sprintf('sigmas[%d]',1:max(dat$groupIds))),
-    list('metaRecipientMu',sprintf('metaSigmaMu[%d]',dat$groupTypes)),
-    list('metaRecipientSd',sprintf('metaSigmaSigma[%d]',dat$groupTypes)),
+    list('recipients\\[[0-9]+\\]',sprintf('sigmas[%d]',1:max(dat$groupIds)),'alphas\\[[0-9]+\\]','betas\\[[0-9]+\\]'),
+    list('metaRecipientMu',sprintf('metaSigmaMu[%d]',dat$groupTypes),'metaAlphaMu','metaBetaMu'),
+    list('metaRecipientSd',sprintf('metaSigmaSigma[%d]',dat$groupTypes),'metaAlphaSd','metaBetaSd'),
     sims
   )
   #pull out recipient change
@@ -447,22 +447,43 @@ recipientMinus2Sd<-lapply(names(targetCols),function(targetCol){
   colnames(donorSigmas)<-names(donorIds)
   #log10 transformed proportion of donor viruses > recipient-1.96*recipientSigma
   recipientMinus2Sd<-pnorm(recipients-recipientSigmas*1.96,0,donorSigmas,log=TRUE,lower.tail=FALSE)*log10(exp(1))
-  return(recipientMinus2Sd)
+  #pull out alpha
+  alphaDonorIds<-alphaIds[alphaIds<99999]
+  alphas<-converted[,sprintf('alphas[%d]',alphaDonorIds,alphaDonorIds)]
+  colnames(alphas)<-names(alphaDonorIds)
+  alphaSigmaIds<-groupIds[sub('A2$','PL A2',colnames(alphas))]
+  alphaSigmas<-converted[,sprintf('sigmas[%d]',alphaSigmaIds)]
+  alphaDonorSigmas<-donorSigmas[,sub(' A2$','',colnames(alphas))]
+  alphaMinus2Sd<-pnorm(alphas-alphaSigmas*1.96,0,alphaDonorSigmas,log=TRUE,lower.tail=FALSE)*log10(exp(1))
+  #pull out beta
+  betaDonorIds<-betaIds[betaIds<99999]
+  betas<-converted[,sprintf('betas[%d]',betaDonorIds,betaDonorIds)]
+  colnames(betas)<-names(betaDonorIds)
+  betaSigmaIds<-groupIds[sub('BE$','PL BE',colnames(betas))]
+  betaSigmas<-converted[,sprintf('sigmas[%d]',betaSigmaIds)]
+  betaDonorSigmas<-donorSigmas[,sub(' BE$','',colnames(betas))]
+  betaMinus2Sd<-pnorm(betas-betaSigmas*1.96,0,betaDonorSigmas,log=TRUE,lower.tail=FALSE)*log10(exp(1))
+  return(list('recipient'=recipientMinus2Sd,'alpha'=alphaMinus2Sd,'beta'=betaMinus2Sd))
 })
 names(recipientMinus2Sd)<-names(targetCols)
 
-probRange<-c(min(do.call(rbind,lapply(recipientMinus2Sd,function(xx)apply(xx,2,quantile,0.01)))),0)
-probRange<-c(-1000,0)
+probRange<-c(min(do.call(rbind,lapply(recipientMinus2Sd,function(xx)apply(xx[['recipient']],2,quantile,0.01)))),0)
+probRange<-c(-50,0)
 bins<-seq(probRange[1],probRange[2],length.out=200)
 meanBin<-(bins[-length(bins)]+bins[-1])/2
 pdf('out/bayes/probabilityOfRecipient.pdf',height=20,width=8)
   par(mfrow=c(length(recipientMinus2Sd),1))
-  for(ii in names(recipientMinus2Sd)){
-    message(ii)
-    plot(1,1,type='n',xlim=probRange,ylim=c(0,.1),xlab='Proportion of donor virus reaching recipient levels (log10)',ylab='Posterior probability',main=targetCols[ii],xaxs='i',las=1)
-    tabbed<-apply(recipientMinus2Sd[[ii]],2,function(x)table(cut(x,bins))/length(x))
-    for(jj in 1:ncol(recipientMinus2Sd[[ii]])){
-      polygon((c(probRange[1],meanBin,probRange[2],probRange[1])),c(0,tabbed[,jj],0,0),col='#00000044',border='#00000099')
+  for(type in names(recipientMinus2Sd[[1]])){
+    for(ii in names(recipientMinus2Sd)){
+      message(ii)
+      plot(1,1,type='n',xlim=probRange,ylim=c(0,.1),xlab=sprintf('Proportion of donor virus reaching %s levels',type),ylab='Posterior probability',main=sprintf('%s',targetCols[ii]),xaxs='i',las=1,xaxt='n')
+      axis(1,-40:0,rep('',41),tcl=-.1)
+      axis(1,seq(-40,0,10),sapply(seq(-40,0,10), function(x) as.expression(bquote(10^.(x)))))
+      tabbed<-apply(recipientMinus2Sd[[ii]][[type]],2,function(x)table(cut(x,bins))/length(x))
+      for(jj in 1:ncol(recipientMinus2Sd[[ii]][[type]])){
+        polygon((c(probRange[1],meanBin,probRange[2],probRange[1])),c(0,tabbed[,jj],0,0),col='#00000044',border='#00000099')
+      }
     }
   }
 dev.off()
+
