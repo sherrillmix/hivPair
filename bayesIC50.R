@@ -443,7 +443,7 @@ recipientMinus2Sd<-lapply(names(targetCols),function(targetCol){
   donorIds<-groupIds[grepl('Donor.*PL UT',names(groupIds))]
   names(donorIds)<-sub(' PL UT','',names(donorIds))
   donorIds<-donorIds[sub('-[0-9]+$','',sub('Recipient','Donor',colnames(recipients)))]
-  donorSigmas<-converted[,sprintf('sigmas[%d]',recipientSigmaIds)]
+  donorSigmas<-converted[,sprintf('sigmas[%d]',donorIds)]
   colnames(donorSigmas)<-names(donorIds)
   #log10 transformed proportion of donor viruses > recipient-1.96*recipientSigma
   recipientMinus2Sd<-pnorm(recipients-recipientSigmas*1.96,0,donorSigmas,log=TRUE,lower.tail=FALSE)*log10(exp(1))
