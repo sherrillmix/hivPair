@@ -13,12 +13,12 @@ seqMat<-seqMat[,nBase>10&1:ncol(seqMat) %in% startEnd[1]:startEnd[2]]
 onlyDiff<-seqMat[,apply(seqMat,2,function(x)length(unique(x[x!='-']))>1)]
 
 png('out/diff.png',width=2000,height=2000)
-par(mar=c(4,4,1,6))
-plotDNA(apply(onlyDiff,1,paste,collapse='')[hiv$donor],groups=paste(hiv$Pair.ID..,hiv$select)[hiv$donor])
+par(mar=c(4,4,1,9))
+plotDNA(apply(onlyDiff,1,paste,collapse='')[hiv$donor],groups=paste(hiv$select,hiv$Pair.ID)[hiv$donor])
 dev.off()
 png('out/align.png',width=2000,height=2000)
 par(mar=c(4,4,1,6))
-plotDNA(align[hiv$seqId,'seq'],groups=paste(hiv$Pair.ID..,hiv$donor))
+plotDNA(align[hiv$seqId,'seq'],groups=paste(ifelse(hiv$donor,'D','R'),hiv$Pair.ID))
 dev.off()
 
 
@@ -39,12 +39,12 @@ onlyDiffAA<-aaMat[,apply(aaMat,2,function(x)length(unique(x[x!='-']))>1)]
 
 
 png('out/diffAA.png',width=2000,height=2000)
-par(mar=c(4,4,1,6))
-plotAA(apply(onlyDiffAA,1,paste,collapse='')[hiv$donor],groups=paste(hiv$Pair.ID..,hiv$select)[hiv$donor])
+par(mar=c(4,4,1,9))
+plotAA(apply(onlyDiffAA,1,paste,collapse='')[hiv$donor],groups=paste(hiv$select,hiv$Pair.ID)[hiv$donor])
 dev.off()
 png('out/alignAA.png',width=2000,height=2000)
 par(mar=c(4,4,1,6))
-plotAA(apply(aaMat,1,paste,collapse=''),groups=paste(hiv$Pair.ID..,hiv$donor))
+plotAA(apply(aaMat,1,paste,collapse=''),groups=paste(ifelse(hiv$donor,'D','R'),hiv$Pair.ID))
 dev.off()
 
 
