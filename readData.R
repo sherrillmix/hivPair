@@ -7,7 +7,9 @@ hiv$baseName<-sub('\\..*$','',hiv$Name)
 hiv$isGenital<-hiv$Fluid!='PL'
 hiv$isDonor<-hiv[,'Donor/Recipient']=='Donor'
 hiv$fluidSelectDonor<-paste(ifelse(hiv$isDonor,'Donor','Recipient'),ifelse(hiv$isGenital,'Genital','Plasma'),selectionExpand[hiv$Selection])
-hiv$sampleFluidSelect<-paste(sub(' ','-',hiv[,'Donor/Recipient']),hiv[,'Pair ID'],hiv[,'Fluid'],hiv[,'Selection'])
+hiv$sample<-paste(hiv[,'Donor/Recipient'],hiv[,'Pair ID'])
+hiv$sampleFluidSelect<-paste(hiv$sample,hiv[,'Fluid'],hiv[,'Selection'])
+hiv$sampleSelect<-paste(sub(' ','-',hiv[,'Donor/Recipient']),hiv[,'Pair ID'],hiv$Selection)
 
 #columns with data
 targetCols<-c(
@@ -35,3 +37,7 @@ if(!dir.exists('out'))dir.create('out')
 
 #colors for pairs
 pairColors<-c('1'='#999999','2'='#99CC33','3'='#CC6699','4'='#9999CC','5'='#99CCCC','6'='#CC9966','7'='#FF9966')
+
+#note using log10 instead of log to make plotting easier
+logit<-function(p)log10(p)-log10(1-p)
+invLogit<-function(x)10^(x)/(10^(x)+1)
