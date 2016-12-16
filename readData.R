@@ -10,8 +10,13 @@ hiv<-read.xlsx("data/Final all data master 101116 copy 2.xlsx",sheetIndex=1,stri
 hiv<-hiv[hiv$Renamed!='',]
 hiv<-hiv[apply(hiv,1,function(x)!all(is.na(x))),apply(hiv,2,function(x)!all(is.na(x)))]
 colnames(hiv)<-sub('\\.+$','',sub('^X\\.','',colnames(hiv)))
-hiv<-hiv[hiv$Renamed!='CH742.SE.082708.BE.1',]
+hiv$seqId<-sprintf('seq%d',1:nrow(hiv))
 hiv$seq<-toupper(gsub('[ \n]','',hiv$Sequence))
+#correct mismatch between align and stored seq
+if(withAs(xx=hiv[hiv$Renamed=='CH492.CV.020608.UT.4','seq'],substring(xx,nchar(xx)-3))=='GCGG'){
+  hiv[hiv$Renamed=='CH492.CV.020608.UT.4','seq']<-withAs(xx=hiv[hiv$Renamed=='CH492.CV.020608.UT.4','seq'],substring(xx,1,nchar(xx)-2))
+}
+hiv<-hiv[hiv$Renamed!='CH742.SE.082708.BE.1',]
 hiv$select<-sapply(strsplit(hiv$Renamed,'\\.'),'[',4)
 hiv$fluid<-sapply(strsplit(hiv$Renamed,'\\.'),'[',2)
 hiv$donorRec<-sub(' ','-',hiv$Donor.or.Recipient)
@@ -22,7 +27,6 @@ hiv$sampleFluid<-paste(hiv$donorRec,hiv$Pair.ID,hiv$fluid)
 hiv$sampleFluidSelect<-paste(hiv$donorRec,hiv$Pair.ID,hiv$fluid,hiv$select)
 hiv$fluidSelectDonor<-paste(ifelse(hiv$donor,'DO','RE'),ifelse(hiv$fluid=="PL",'PL','GE'),hiv$select)
 hiv$fluidSelectDonor2<-paste(ifelse(hiv$donor,'Donor','Recipient'),ifelse(hiv$fluid=="PL",'Plasma','Genital'),ifelse(hiv$select=='UT','Untreated',ifelse(hiv$select=='A2','IFNA2','IFNB')))
-hiv$seqId<-sprintf('seq%d',1:nrow(hiv))
 hiv$baseName<-sub('\\..*$','',hiv$Renamed)
 hiv$nameFluidSelect<-paste(hiv$baseName,hiv$fluid,hiv$select)
 hiv$isGenital<-hiv$fluid!='PL'
@@ -68,9 +72,9 @@ if(any(round(hiv$vres,5)>round(hiv$minVres,5)*1.02&hiv$vresCensor))stop(simpleEr
 
 
 targetCols<-c(
-  'Env.RT'='Env/RT',
+  'Env.RT'='Env/RT ratio',
   'Infectivity.RLU.pg.RT...T1249'='Infectivity (RLU/pg RT)',
-  'Replicative.capacity.Pooled.Donor.cells.p24.d7'='Replicative capacity (p24)',
+  'Replicative.capacity.Pooled.Donor.cells.p24.d7'='Replicative capacity (ng p24/ml)',
   'IFNa2.Pooled.Donor.cells.IC50..pg..ml'='IFNa2 IC50 (pg/ml)',
   'IFNbeta.Pooled.Donor.cells.IC50..pg.ml'='IFNbeta IC50 (pg/ml)',
   'Residual.Pooled.Donor.cells..1500U..UT'='IFNa2 Vres',
@@ -99,10 +103,16 @@ invLogit<-function(x)10^(x)/(10^(x)+1)
 pairColors<-c('3'='#999999','4'='#99CC33','7'='#CC6699','1'='#9999CC','2'='#99CCCC','5'='#CC9966','6'='#FF9966')
 
 #output final csv
+accessions<-read.csv('data/accessions.csv',stringsAsFactors=FALSE,header=FALSE,row.names=1)
+
 desiredCols<-c('Name'='Renamed','Subtype'='Subtype','Gender'='Gender','Donor/Recipient'='Donor.or.Recipient','Pair ID'='Pair.ID','Fluid'='fluid','Selection'='select',structure(names(targetCols),.Names=targetCols),'Censored IFNbeta Vres'='isMinVres')
 finalCsv<-hiv[,desiredCols]
+finalCsv$Donor.or.Recipient<-sub(' ','-',finalCsv$Donor.or.Recipient)
+#convert to order in paper
+finalCsv$Pair.ID<-sapply(finalCsv$Pair.ID,function(x)which(names(pairColors)==x))
 names(finalCsv)<-names(desiredCols)
 finalCsv$Name[finalCsv$Fluid!='PL']<-sub('\\.UT\\.','.',finalCsv$Name[finalCsv$Fluid!='PL'])
+finalCsv$Accession<-accessions[finalCsv$Name,1]
 write.csv(finalCsv,'out/Iyer2016_Data.csv',row.names=FALSE)
 
 
