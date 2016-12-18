@@ -1,15 +1,12 @@
 library('rstan')
-library('dnar')
 library('vioplot')
 library('png') #for raster inside pdf
-
+library(parallel)
 
 #for parallel
-nThreads<-50
-if(parallel::detectCores()>10){
-  rstan_options(auto_write = TRUE)
-  options(mc.cores = parallel::detectCores())
-}
+nThreads<-5
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
 
 if(!exists('hiv'))source('readData.R')
 
@@ -29,6 +26,7 @@ stanCode<-"
     int<lower=0> nGroupTypes;
     int<lower=1> groupTypes[nGroup];
     int<lower=0> nGenital;
+    int<lower=1> genitalId[N];
     int<lower=0> nCladeB;
     int<lower=1> cladeBId[N];
     int<lower=0> nAlpha;
@@ -75,7 +73,7 @@ stanCode<-"
     for (ii in 1:N){
       indivMu[ii] = metaDonorMu+donors[pairIds[ii]]*metaDonorSd;
       if(isRecipient[ii])indivMu[ii]=indivMu[ii]+metaRecipientMu+recipients[recipientIds[ii]]*metaRecipientSd;
-      if(isGenital[ii])indivMu[ii]=indivMu[ii]+metaGenitalMu+genitals[pairIds[ii]]*metaGenitalSd;
+      if(isGenital[ii])indivMu[ii]=indivMu[ii]+metaGenitalMu+genitals[genitalIds[ii]]*metaGenitalSd;
       if(isCladeB[ii] && isRecipient[ii])indivMu[ii]=indivMu[ii]+metaCladeMu+clades[cladeBId[ii]]*metaCladeSd;
       if(recipientAlphaIds[ii]<999)indivMu[ii]=indivMu[ii]+metaRecipientAlphaMu+recipientAlphas[recipientAlphaIds[ii]]*metaRecipientAlphaSd;
       if(recipientBetaIds[ii]<999)indivMu[ii]=indivMu[ii]+metaRecipientBetaMu+recipientBetas[recipientBetaIds[ii]]*metaRecipientBetaSd;
@@ -114,28 +112,23 @@ assignGroups<-function(x,selector=rep(TRUE,length(x)),outId=99999){
   cladeBIds<-structure(c(1:length(cladeBs),rep(outId,length(notCladeBs))),.Names=c(cladeBs,notCladeBs))
   return(cladeBIds)
 }
-cladeBIds<-assignGroups(hiv$Pair.ID,hiv$Subtype=='B')
-recipientIds<-assignGroups(hiv$sample[order(hiv$Pair.ID)],!hiv$donor[order(hiv$Pair.ID)])
-alphaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID)],hiv[order(hiv$Pair.ID),'select']=='A2'&hiv[order(hiv$Pair.ID),'donor'])
-betaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID)],hiv[order(hiv$Pair.ID),'select']=='BE'&hiv[order(hiv$Pair.ID),'donor'])
-recipientAlphaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID)],hiv[order(hiv$Pair.ID),'select']=='A2'&!hiv[order(hiv$Pair.ID),'donor'])
-recipientBetaIds<-assignGroups(hiv$sampleSelect[order(hiv$Pair.ID)],hiv[order(hiv$Pair.ID),'select']=='BE'&!hiv[order(hiv$Pair.ID),'donor'])
+cladeBIds<-assignGroups(hiv[,'Pair ID'],hiv$Subtype=='B')
+recipientIds<-assignGroups(hiv$sample[order(hiv[,'Pair ID'])],!hiv$isDonor[order(hiv[,'Pair ID'])])
+alphaIds<-assignGroups(hiv$sampleSelect[order(hiv[,'Pair ID'])],hiv[order(hiv[,'Pair ID']),'Selection']=='A2'&hiv[order(hiv[,'Pair ID']),'isDonor'])
+betaIds<-assignGroups(hiv$sampleSelect[order(hiv[,'Pair ID'])],hiv[order(hiv[,'Pair ID']),'Selection']=='BE'&hiv[order(hiv[,'Pair ID']),'isDonor'])
+recipientAlphaIds<-assignGroups(hiv$sampleSelect[order(hiv[,'Pair ID'])],hiv[order(hiv[,'Pair ID']),'Selection']=='A2'&!hiv[order(hiv[,'Pair ID']),'isDonor'])
+recipientBetaIds<-assignGroups(hiv$sampleSelect[order(hiv[,'Pair ID'])],hiv[order(hiv[,'Pair ID']),'Selection']=='BE'&!hiv[order(hiv[,'Pair ID']),'isDonor'])
+genitalIds<-assignGroups(hiv$sampleFluid[order(hiv[,'Pair ID'])],hiv$isGenital[order(hiv[,'Pair ID'])])
 
-#stick recipient beta/alpha treated with untreated variance
-#stick beta treated genital in beta treated plasma
-hiv$group<-paste(hiv$sample,ifelse(hiv$isGenital,ifelse(hiv$select=='BE','PL',ifelse(hiv$isGenital,'GE','PL')),'PL'),ifelse(hiv$donor,hiv$select,'UT'))
-hiv$groupType<-paste(ifelse(hiv$donor,'Donor','Recipient'),ifelse(hiv$select=='BE','PL',ifelse(hiv$isGenital,'GE','PL')),ifelse(hiv$donor,hiv$select,'UT'))
-groupIds<-assignGroups(hiv$group[order(hiv$Pair.ID,hiv$sampleFluid)],rep(TRUE,nrow(hiv)))
-groupTypeIds<-assignGroups(hiv$groupType[order(hiv$Pair.ID,hiv$sampleFluid)],rep(TRUE,nrow(hiv)))
+#stick recipient beta/alpha treated with untreated recipient variance
+hiv$group<-paste(hiv$sample,ifelse(hiv$isGenital,'GE','PL'),ifelse(hiv$isDonor,hiv$Selection,'UT'))
+hiv$groupType<-paste(ifelse(hiv$isDonor,'Donor','Recipient'),ifelse(hiv$isGenital,'GE','PL'),ifelse(hiv$isDonor,hiv$Selection,'UT'))
+groupIds<-assignGroups(hiv$group[order(hiv[,'Pair ID'],hiv$sampleFluid)],rep(TRUE,nrow(hiv)))
+groupTypeIds<-assignGroups(hiv$groupType[order(hiv[,'Pair ID'],hiv$sampleFluid)],rep(TRUE,nrow(hiv)))
 groupTypes<-sapply(names(groupIds),function(x)hiv[hiv$group==x,'groupType'][1])
-#groupTypes<-sub('^(Donor|Recipient)-?[0-9]? [0-9]+ ','\\1 ',names(groupIds))
-#groupTypeIds<-structure(hiv$groupTypes,names=unique(groupTypes))
 
 if(!exists('fits')){
-  fits<-lapply(names(targetCols),function(targetCol){
-    #just group by donor or recipient
-    #groupTypes<-sapply(1:max(hiv$group),function(zz)ifelse(hiv[hiv$group==zz,'donor'][1],'Don','Rec'))
-    #note 99999 is a arbitrarily high number for non clade Bs (should never be called within Stan due to if(cladeB))
+  fits<-lapply(targetCols,function(targetCol){
     thisTransform<-targetColTransform[targetCol]
     thisCensorDown<-targetColCensorDown[[targetCol]]
     if(thisTransform=='log'){
@@ -147,23 +140,25 @@ if(!exists('fits')){
     }else{
       stop(simpleError('Unknown tranform'))
     }
-    dat<-withAs('xx'=hiv[!is.na(hiv[,targetCol]),],list(
+    xx<-hiv[!is.na(hiv[,targetCol]),]
+    dat<-list(
       ic50=transformFunc(xx[,targetCol]),
       N=nrow(xx),
       isCladeB=as.integer(xx$Subtype=='B'),
-      isGenital=as.integer(xx$fluid!='PL'),
-      nGenital=max(xx[xx$fluid!='PL','Pair.ID']),
-      isRecipient=as.integer(!xx$donor),
+      isGenital=as.integer(xx$Fluid!='PL'),
+      nGenital=sum(genitalIds<9999),
+      isRecipient=as.integer(!xx$isDonor),
       nGroup=max(groupIds),
       groupIds=groupIds[xx$group],
-      nPair=max(xx$Pair.ID),
-      pairIds=xx$Pair.ID,
+      nPair=max(xx[,'Pair ID']),
+      pairIds=xx[,'Pair ID'],
       nRecipient=sum(recipientIds<9999),
+      genitalIdsgenitalIds[xx$sampleFluid],
       recipientIds=recipientIds[xx$sample],
       nGroupTypes=length(unique(xx$groupType)),
       groupTypes=groupTypeIds[groupTypes],
       nCladeB=sum(cladeBIds<9999),
-      cladeBId=cladeBIds[as.character(xx$Pair.ID)],
+      cladeBId=cladeBIds[as.character(xx[,'Pair ID'])],
       nAlpha=sum(alphaIds<9999),
       alphaIds=alphaIds[xx$sampleSelect],
       nBeta=sum(betaIds<9999),
@@ -172,8 +167,8 @@ if(!exists('fits')){
       recipientAlphaIds=recipientAlphaIds[xx$sampleSelect],
       nRecipientBeta=sum(recipientBetaIds<9999),
       recipientBetaIds=recipientBetaIds[xx$sampleSelect],
-      isBeta=as.numeric(xx$select=='BE') #don't actually use this but keeping in for now for caching
-    ))
+      isBeta=as.numeric(xx$Selection=='BE') #don't actually use this but keeping in for now for caching
+    )
     #R makes local copy so we don't have to worry about overwrite global stanCode
     if(thisTransform=='identity'){
       stanCode<-gsub('~ *gamma\\([0-9,]+\\)','~ gamma(2,.01)',stanCode)
@@ -189,10 +184,10 @@ if(!exists('fits')){
       stanCode<-sub('real ic50\\[N\\];','real ic50[N];\nreal censorDown[N];',stanCode)
       dat<-c(dat,list('censorDown'=cutVal))
     }
-    fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=100000, chains=nThreads,thin=25,control=list(adapt_delta=.999,stepsize=.01))
+    fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=1000, chains=nThreads,thin=5,control=list(adapt_delta=.999,stepsize=.01))
     return(list('fit'=fit,'dat'=dat,stan=stanCode))
   })
-  names(fits)<-names(targetCols)
+  names(fits)<-targetCols
 }
 
 #convert the N(0,1) dists to real distributions based on meta mu and sd
@@ -204,7 +199,7 @@ convertCols<-function(cols,means,sds,sims){
   return(do.call(cbind,out))
 }
 
-cachedTabs<-cacheOperation('work/stanTabs.Rdat',lapply,names(targetCols),function(targetCol){
+cachedTabs<-cacheOperation('work/stanTabs.Rdat',lapply,targetCols,function(targetCol){
   if(targetColTransform[targetCol]=='identity') xlim<-c(-420,530)
   else if(targetCol=='vres')xlim<-c(-1.2,3.5)
   else xlim<-c(-1.2,2.5)
@@ -241,11 +236,11 @@ cachedTabs<-cacheOperation('work/stanTabs.Rdat',lapply,names(targetCols),functio
   tabbed<-apply(converted,2,function(x)table(cut(x,bins))/length(x))
   return(list('tabs'=tabbed,'stats'=stats,'stats2'=stats2,'bins'=bins))
 },OVERWRITE=TRUE)
-names(cachedTabs)<-names(targetCols)
+names(cachedTabs)<-targetCols
 
 allPars<-c("metaDonorMu", "metaDonorSd", "metaRecipientMu", "metaRecipientSd", "metaGenitalMu", "metaGenitalSd","metaCladeMu","metaCladeSd","donors", "sigmas", "metaSigmaMu", "metaSigmaSigma", "genitals", "recipients", "clades","metaAlphaMu","metaAlphaSd","metaBetaMu","metaBetaSd","alphas","betas","metaRecipientAlphaMu","metaRecipientAlphaSd","metaRecipientBetaMu","metaRecipientBetaSd","recipientAlphas","recipientBetas")
 
-for(targetCol in names(targetCols)){
+for(targetCol in targetCols){
   message(targetCol)
   #
   if(targetColTransform[targetCol]=='identity'){
@@ -375,7 +370,7 @@ for(targetCol in names(targetCols)){
   dev.off()
 }
 
-check<-mclapply(names(targetCols),function(targetCol){
+check<-mclapply(targetCols,function(targetCol){
   message(targetCol)
   fit<-fits[[targetCol]][['fit']]
   dat<-fits[[targetCol]][['dat']]
