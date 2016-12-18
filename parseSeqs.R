@@ -6,6 +6,7 @@ seqMat<-seqSplit(align$seq)
 rownames(seqMat)<-align$name
 refPos<-cumsum(seqMat[refName,]!='-')
 seqMat<-seqMat[hiv$seqId,]
+if(any(degap(apply(seqMat,1,paste,collapse=''))!=hiv$seq))stop(simpleError('hiv metadata and alignment mismatched'))
 colnames(seqMat)<-sprintf('nt%s.%s',refPos,ave(refPos,refPos,FUN=function(x)1:length(x)))
 nBase<-apply(seqMat,2,function(x)sum(x!='-'))
 startEnd<-range(which(nBase/nrow(seqMat)>.9))
