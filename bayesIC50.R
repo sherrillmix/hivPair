@@ -26,7 +26,7 @@ stanCode<-"
     int<lower=0> nGroupTypes;
     int<lower=1> groupTypes[nGroup];
     int<lower=0> nGenital;
-    int<lower=1> genitalId[N];
+    int<lower=1> genitalIds[N];
     int<lower=0> nCladeB;
     int<lower=1> cladeBId[N];
     int<lower=0> nAlpha;
@@ -153,7 +153,7 @@ if(!exists('fits')){
       nPair=max(xx[,'Pair ID']),
       pairIds=xx[,'Pair ID'],
       nRecipient=sum(recipientIds<9999),
-      genitalIdsgenitalIds[xx$sampleFluid],
+      genitalIds=genitalIds[xx$sampleFluid],
       recipientIds=recipientIds[xx$sample],
       nGroupTypes=length(unique(xx$groupType)),
       groupTypes=groupTypeIds[groupTypes],
@@ -184,7 +184,7 @@ if(!exists('fits')){
       stanCode<-sub('real ic50\\[N\\];','real ic50[N];\nreal censorDown[N];',stanCode)
       dat<-c(dat,list('censorDown'=cutVal))
     }
-    fit <- cacheOperation(sprintf('work/stan%s.Rdat',targetCol),stan,model_code = stanCode, data = dat, iter=1000, chains=nThreads,thin=5,control=list(adapt_delta=.999,stepsize=.01))
+    fit <- stan(model_code = stanCode, data = dat, iter=1000, chains=nThreads,thin=5,control=list(adapt_delta=.999,stepsize=.01))
     return(list('fit'=fit,'dat'=dat,stan=stanCode))
   })
   names(fits)<-targetCols
@@ -199,7 +199,7 @@ convertCols<-function(cols,means,sds,sims){
   return(do.call(cbind,out))
 }
 
-cachedTabs<-cacheOperation('work/stanTabs.Rdat',lapply,targetCols,function(targetCol){
+cachedTabs<-lapply(targetCols,function(targetCol){
   if(targetColTransform[targetCol]=='identity') xlim<-c(-420,530)
   else if(targetCol=='vres')xlim<-c(-1.2,3.5)
   else xlim<-c(-1.2,2.5)
@@ -235,7 +235,7 @@ cachedTabs<-cacheOperation('work/stanTabs.Rdat',lapply,targetCols,function(targe
   )
   tabbed<-apply(converted,2,function(x)table(cut(x,bins))/length(x))
   return(list('tabs'=tabbed,'stats'=stats,'stats2'=stats2,'bins'=bins))
-},OVERWRITE=TRUE)
+})
 names(cachedTabs)<-targetCols
 
 allPars<-c("metaDonorMu", "metaDonorSd", "metaRecipientMu", "metaRecipientSd", "metaGenitalMu", "metaGenitalSd","metaCladeMu","metaCladeSd","donors", "sigmas", "metaSigmaMu", "metaSigmaSigma", "genitals", "recipients", "clades","metaAlphaMu","metaAlphaSd","metaBetaMu","metaBetaSd","alphas","betas","metaRecipientAlphaMu","metaRecipientAlphaSd","metaRecipientBetaMu","metaRecipientBetaSd","recipientAlphas","recipientBetas")
@@ -244,13 +244,11 @@ for(targetCol in targetCols){
   message(targetCol)
   #
   if(targetColTransform[targetCol]=='identity'){
-    addAxis<-function()axis(1,pretty(xlim))
     transform<-function(x)x
     logX<-''
     xlab<-sprintf('Increase in %s',gsub('\n',' ',targetCols[targetCol]))
   }
   else{
-    addAxis<-function()logAxis(1,mgp=c(3,.5,0))
     transform<-function(x)10^x
     logX<-'x'
     xlab<-sprintf('Fold increase in %s',gsub('\n',' ',targetCols[targetCol]))
@@ -299,10 +297,10 @@ for(targetCol in targetCols){
   outStats[outStats$gt0==1,'p(effect<=1)']<-sprintf("<%s",format(1/outStats[outStats$gt0==1,'n'],digits=1,scientific=FALSE))
   output<-outStats[,c('mean','95% CrI','90% CrI','p(effect<=1)')]
   if(targetColTransform[targetCol]=='identity')colnames(output)[colnames(output)=='p(effect<=1)']<-'p(effect<=0)'
-  write.csv(output,sprintf('out/bayes/stats_%s.csv',targetCol))
+  write.csv(output,sprintf('out/stats_%s.csv',sub('/','_',targetCol)))
   outStats2<-data.frame('probability'=stats2)
   outStats2[outStats2$probability==0,'probability']<-sprintf("<%s",format(1/outStats[1,'n'],digits=1,scientific=FALSE))
-  write.csv(outStats2,sprintf('out/bayes/stats2_%s.csv',targetCol))
+  write.csv(outStats2,sprintf('out/stats2_%s.csv',sub('/','_',targetCol)))
   pairs<-t(stats[,c(recipientCols,genitalCols,cladeCols,alphaCols,betaCols,recAlphaCols,recBetaCols)])
   #
   tmp<-cladeBIds
@@ -314,38 +312,34 @@ for(targetCol in targetCols){
     regex<-sprintf('%s\\[([0-9]+)\\]',ii)
     rownames(pairs)[grep(regex,rownames(pairs))]<-sapply(as.numeric(sub(regex,'\\1',rownames(pairs)[grep(regex,rownames(pairs))])),function(xx)names(converts[[ii]])[converts[[ii]]==xx])
   }
-  write.csv(pairs,sprintf('out/bayes/pairStats_%s.csv',targetCol))
+  write.csv(pairs,sprintf('out/pairStats_%s.csv',sub('/','_',targetCol)))
   #
-  pdf(sprintf('out/bayes/bayes%s.pdf',targetCol),height=9,width=6)
+  pdf(sprintf('out/bayes%s.pdf',sub('/','_',targetCol)),height=9,width=6)
     par(mfrow=c(6,1),las=1,mar=c(3,3.6,1.1,.1))
     ylims<-c(0,max(tabs[,c(colnames(tabs)[c(recipientCols,cladeCols,genitalCols,alphaCols,betaCols)],'metaRecipientMu','metaGenitalMu','metaCladeMu','metaAlphaMu','metaBetaMu')]))
-    plot(1,1,type='n',xlim=transform(xlim),ylim=ylims,xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.7,0),log=logX,main='Individual effects',xaxs='i')
+    plot(1,1,type='n',xlim=transform(xlim),ylim=ylims,xlab='',ylab='Posterior probability',mgp=c(2.7,.7,0),log=logX,main='Individual effects',xaxs='i')
     title(xlab=xlab,mgp=c(1.5,1,0))
     meanBin<-(bins[-length(bins)]+bins[-1])/2
     apply(tabs[,recipientCols],2,function(xx)polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,xx,0,0),col='#0000FF11',border='#0000FF44'))
     apply(tabs[,genitalCols],2,function(xx)polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,xx,0,0),col='#FF000011',border='#FF000044'))
     apply(tabs[,cladeCols],2,function(xx)polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,xx,0,0),col='#00FF0011',border='#00FF0044'))
     abline(v=1,lty=2)
-    addAxis()
-    plot(1,1,type='n',xlim=transform(xlim),ylim=ylims,xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log=logX,main='Population effects',xaxs='i')
+    plot(1,1,type='n',xlim=transform(xlim),ylim=ylims,xlab='',ylab='Posterior probability',mgp=c(2.7,.8,0),log=logX,main='Population effects',xaxs='i')
     title(xlab=xlab,mgp=c(1.5,1,0))
     polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,tabs[,'metaRecipientMu'],0,0),col='#0000FF44',border='#0000FF99')
     polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,tabs[,'metaGenitalMu'],0,0),col='#FF000044',border='#FF000099')
     polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,tabs[,'metaCladeMu'],0,0),col='#00FF0044',border='#00FF0099')
     abline(v=1,lty=2)
     legend('topleft',c('Recipient','Clade B','Genital'),fill=c('#0000FF44','#00FF0044','#FF000044'),border=c('#0000FF99','#00FF0099','#FF000099'),inset=.02)
-    addAxis()
-    plot(1,1,type='n',xlim=transform(xlim),ylim=ylims,xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log=logX,main='Individual selection',xaxs='i')
+    plot(1,1,type='n',xlim=transform(xlim),ylim=ylims,xlab='',ylab='Posterior probability',mgp=c(2.7,.8,0),log=logX,main='Individual selection',xaxs='i')
     title(xlab=xlab,mgp=c(1.5,1,0))
-    addAxis()
     abline(v=1,lty=2)
     apply(tabs[,alphaCols],2,function(xx)polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,xx,0,0),col='#0000FF11',border='#0000FF44'))
     apply(tabs[,betaCols],2,function(xx)polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,xx,0,0),col='#FF000011',border='#FF000044'))
     apply(tabs[,recAlphaCols],2,function(xx)polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,xx,0,0),col='#00FF0011',border='#00FF0044'))
     apply(tabs[,recBetaCols],2,function(xx)polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,xx,0,0),col='#FFD70011',border='#FFD70044'))
-    plot(1,1,type='n',xlim=transform(xlim),ylim=ylims,xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log=logX,main='Population selection',xaxs='i')
+    plot(1,1,type='n',xlim=transform(xlim),ylim=ylims,xlab='',ylab='Posterior probability',mgp=c(2.7,.8,0),log=logX,main='Population selection',xaxs='i')
     title(xlab=xlab,mgp=c(1.5,1,0))
-    addAxis()
     abline(v=1,lty=2)
     polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,tabs[,'metaRecipientMu'],0,0),col='#00000022',border='#00000099',lty=2)
     polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,tabs[,'metaAlphaMu'],0,0),col='#0000FF44',border='#0000FF99')
@@ -354,15 +348,13 @@ for(targetCol in targetCols){
     polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,tabs[,'metaRecipientBetaMu'],0,0),col='#FFD70044',border='#FFD70099')
     polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,tabs[,'metaGenitalMu'],0,0),col='#CC33FF44',border='#CC33FF99')
     legend('topleft',c('Alpha select','Beta select','Recipient alpha','Recipient beta','Untreated recipient','Genital'),fill=c('#0000FF44','#FF000044','#00FF0044','#FFD70044','#00000022','#CC33FF44'),border=c('#0000FF99','#FF000099','#00FF0099','#FFD70099','#00000099','#CC33FF99'),inset=.02)
-    plot(1,1,type='n',xlim=transform(xlim),ylim=ylims,xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log=logX,main='Individual variance',xaxs='i')
+    plot(1,1,type='n',xlim=transform(xlim),ylim=ylims,xlab='',ylab='Posterior probability',mgp=c(2.7,.8,0),log=logX,main='Individual variance',xaxs='i')
     title(xlab='Standard deviation',mgp=c(1.5,1,0))
-    addAxis()
     apply(tabs[,varColsByGroup[['Donor PL UT']]],2,function(xx)polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,xx,0,0),col='#0000FF11',border='#0000FF44'))
     apply(tabs[,varColsByGroup[['Donor GE UT']]],2,function(xx)polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,xx,0,0),col='#FF000011',border='#FF000044'))
     apply(tabs[,varColsByGroup[['Recipient PL UT']]],2,function(xx)polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,xx,0,0),col='#00FF0011',border='#00FF0044'))
-    plot(1,1,type='n',xlim=transform(xlim),ylim=ylims,xlab='',xaxt='n',ylab='Posterior probability',mgp=c(2.7,.8,0),log=logX,main='Population variance',xaxs='i')
+    plot(1,1,type='n',xlim=transform(xlim),ylim=ylims,xlab='',ylab='Posterior probability',mgp=c(2.7,.8,0),log=logX,main='Population variance',xaxs='i')
     title(xlab='Standard deviation',mgp=c(1.5,1,0))
-    addAxis()
     polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,tabs[,metaVarCols['Donor PL UT']],0,0),col='#0000FF44',border='#0000FF99')
     polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,tabs[,metaVarCols['Donor GE UT']],0,0),col='#FF000044',border='#FF000099')
     polygon(transform(c(xlim[1],meanBin,xlim[2],xlim[1])),c(0,tabs[,metaVarCols['Recipient PL UT']],0,0),col='#00FF0044',border='#00FF0099')
@@ -394,7 +386,7 @@ check<-mclapply(targetCols,function(targetCol){
     do.call(vioplot,c('x'=list(simFits[[1]]),simFits[-1],'add'=list(TRUE),'colMed'=list(NA),'col'=list('#00000033')))
     points(1:length(dat[['ic50']]),dat[['ic50']],col='red',pch='+',lwd=2)
   dev.off()
-  pdf(sprintf('out/bayes/fit%s.pdf',targetCol),width=20,height=20)
+  pdf(sprintf('out/fit%s.pdf',sub('/','_',targetCol)),width=20,height=20)
     print(plot(fit,pars=allPars))
     #use rasters for file size
     par(mai=c(0,0,0,0))
