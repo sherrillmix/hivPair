@@ -13,7 +13,6 @@ The code also uses that `parallel` package but that is included in base R and sh
 |vipor|0.4.4|
 |ROCR|1.0-7|
 |pROC|1.8|
-|----|----|
 |R|3.3.1|
 
 
