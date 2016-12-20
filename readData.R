@@ -35,7 +35,6 @@ targetColCensorDown[['IFNbeta Vres']]<-ifelse(hiv[,'Censored IFNbeta Vres'],hiv[
 
 if(!dir.exists('out'))dir.create('out')
 
-#colors for pairs
 pairColors<-c('1'='#999999','2'='#99CC33','3'='#CC6699','4'='#9999CC','5'='#99CCCC','6'='#CC9966','7'='#FF9966')
 
 #note using log10 instead of log to make plotting easier

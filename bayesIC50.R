@@ -184,7 +184,7 @@ if(!exists('fits')){
       stanCode<-sub('real ic50\\[N\\];','real ic50[N];\nreal censorDown[N];',stanCode)
       dat<-c(dat,list('censorDown'=cutVal))
     }
-    fit <- stan(model_code = stanCode, data = dat, iter=1000, chains=nThreads,thin=5,control=list(adapt_delta=.999,stepsize=.01))
+    fit <- stan(model_code = stanCode, data = dat, iter=4000, chains=nThreads,thin=10,control=list(adapt_delta=.999,stepsize=.01))
     return(list('fit'=fit,'dat'=dat,stan=stanCode))
   })
   names(fits)<-targetCols
