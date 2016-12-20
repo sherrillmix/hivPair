@@ -2,7 +2,7 @@
 selectionExpand<-c('UT'='Untreated','A2'='IFNA2','BE'='IFNB')
 
 #read data
-hiv<-read.csv('data/Iyer2016_Data.csv',stringsAsFactors=FALSE,check.names=FALSE)
+hiv<-read.csv(file.path('data','Iyer2016_Data.csv'),stringsAsFactors=FALSE,check.names=FALSE)
 hiv$baseName<-sub('\\..*$','',hiv$Name)
 hiv$isGenital<-hiv$Fluid!='PL'
 hiv$isDonor<-hiv[,'Donor/Recipient']=='Donor'

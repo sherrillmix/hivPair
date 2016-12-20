@@ -8,7 +8,7 @@ nThreads<-5
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
-if(!dir.exists('out/bayes'))dir.create('out/bayes')
+if(!dir.exists(file.path('out','bayes')))dir.create(file.path('out','bayes'))
 
 if(!exists('hiv'))source('readData.R')
 
@@ -299,10 +299,10 @@ for(targetCol in targetCols){
   outStats[outStats$gt0==1,'p(effect<=1)']<-sprintf("<%s",format(1/outStats[outStats$gt0==1,'n'],digits=1,scientific=FALSE))
   output<-outStats[,c('mean','95% CrI','90% CrI','p(effect<=1)')]
   if(targetColTransform[targetCol]=='identity')colnames(output)[colnames(output)=='p(effect<=1)']<-'p(effect<=0)'
-  write.csv(output,sprintf('out/bayes/stats_%s.csv',sub('/','_',targetCol)))
+  write.csv(output,file.path('out','bayes',sprintf('stats_%s.csv',sub('/','_',targetCol))))
   outStats2<-data.frame('probability'=stats2)
   outStats2[outStats2$probability==0,'probability']<-sprintf("<%s",format(1/outStats[1,'n'],digits=1,scientific=FALSE))
-  write.csv(outStats2,sprintf('out/bayes/stats2_%s.csv',sub('/','_',targetCol)))
+  write.csv(outStats2,file.path('out','bayes',sprintf('stats2_%s.csv',sub('/','_',targetCol))))
   #
   tmp<-cladeBIds
   names(tmp)<-sprintf('Clade %s',names(cladeBIds))
@@ -310,7 +310,7 @@ for(targetCol in targetCols){
   tmp2<-structure(1:100,names=sprintf('Genital %d',1:100))
   converts<-list('recipients'=recipientIds,'clades'=tmp,'alphas'=alphaIds,'betas'=betaIds,'recipientAlphas'=recipientAlphaIds,'recipientBetas'=recipientBetaIds,'genitals'=tmp2)
   #
-  pdf(sprintf('out/bayes/bayes%s.pdf',sub('/','_',targetCol)),height=9,width=6)
+  pdf(file.path('out','bayes',sprintf('bayes%s.pdf',sub('/','_',targetCol))),height=9,width=6)
     par(mfrow=c(6,1),las=1,mar=c(3,3.6,1.1,.1))
     ylims<-c(0,max(tabs[,c(colnames(tabs)[c(recipientCols,cladeCols,genitalCols,alphaCols,betaCols)],'metaRecipientMu','metaGenitalMu','metaCladeMu','metaAlphaMu','metaBetaMu')]))
     plot(1,1,type='n',xlim=transform(xlim),ylim=ylims,xlab='',ylab='Posterior probability',mgp=c(2.7,.7,0),log=logX,main='Individual effects',xaxs='i')
@@ -382,7 +382,7 @@ check<-mclapply(targetCols,function(targetCol){
     do.call(vioplot,c('x'=list(simFits[[1]]),simFits[-1],'add'=list(TRUE),'colMed'=list(NA),'col'=list('#00000033')))
     points(1:length(dat[['ic50']]),dat[['ic50']],col='red',pch='+',lwd=2)
   dev.off()
-  pdf(sprintf('out/bayes/fit%s.pdf',sub('/','_',targetCol)),width=20,height=20)
+  pdf(file.path('out','bayes',sprintf('fit%s.pdf',sub('/','_',targetCol))),width=20,height=20)
     print(plot(fit,pars=allPars))
     #use rasters for file size
     par(mai=c(0,0,0,0))

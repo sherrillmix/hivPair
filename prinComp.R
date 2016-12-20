@@ -22,7 +22,7 @@ cols<-rainbow(length(unique(hiv$fluidSelectDonor)),alpha=.6)
 cols2<-rainbow(length(unique(hiv$fluidSelectDonor)),alpha=.8)
 cols3<-rainbow(length(unique(hiv$fluidSelectDonor)),alpha=.02)
 names(cols)<-names(cols2)<-names(cols3)<-sort(unique(hiv$fluidSelectDonor))
-pdf('out/pca.pdf',width=5,height=5)
+pdf(file.path('out','pca.pdf'),width=5,height=5)
   for(subfig2 in c(FALSE,TRUE)){
   select<-1:2
   xlim <- ylim <- range(yFlip*pcaPoints[,select])
@@ -94,7 +94,7 @@ recipientDist<-apply(recipientDiff^2,1,sum)
 
 cols<-rainbow(length(unique(hiv[,'Pair ID'])),alpha=.7)
 names(cols)<-sort(unique(hiv[,'Pair ID']))
-pdf('out/centroidDist.pdf')
+pdf(file.path('out','centroidDist.pdf'))
   par(mar=c(5.2,4,.1,.1))
   vpPlot(factor(hiv[selector,'fluidSelectDonor'],levels=unique(hiv$fluidSelectDonor[order(hiv$isDonor,hiv$Selection=='UT',hiv$Fluid=='PL',hiv$Selection=='A2',decreasing=TRUE)])),recipientDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair ID'])],pch=21,ylab='Distance to recipient samples centroid',las=2)
   legend('topright',names(cols),pch=21,pt.bg=cols,col=NA,inset=.01,title='Pair',ncol=2)

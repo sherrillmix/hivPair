@@ -3,7 +3,7 @@ library(pROC)
 if(!exists('hiv'))source('readData.R')
 
 selector<-!apply(is.na(hiv[,goodTargetCols]),1,any)
-pdf('out/roc.pdf',width=4.5,height=4.5)
+pdf(file.path('out','roc.pdf'),width=4.5,height=4.5)
   for(genital in unique(hiv$isGenital)){
     message(ifelse(genital,'Genital','Plasma'))
     thisSelect<-selector&hiv$Selection=='UT'&(hiv$isGenital==genital|!hiv$isDonor)

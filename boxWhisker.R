@@ -4,7 +4,7 @@ if(!require(vipor)){
   library(vipor)
 }
 if(!exists('hiv'))source('readData.R')
-if(!dir.exists('out/boxWhisker'))dir.create('out/boxWhisker')
+if(!dir.exists(file.path('out','boxWhisker')))dir.create(file.path('out','boxWhisker'))
 
 hiv$nameFluid<-paste(hiv$baseName,hiv$Fluid)
 desiredOrder<-c(
@@ -44,7 +44,7 @@ for(targetCol in targetCols){
     return(out)
   }))
   rownames(plotInfo)<-desiredOrder
-  pdf(sprintf('out/boxWhisker/%s.pdf',gsub('/','_',targetCol)),height=5,width=5)
+  pdf(file.path('out','boxWhisker',sprintf('%s.pdf',gsub('/','_',targetCol))),height=5,width=5)
     par(mar=c(5.4,3,.3,.1))
     isLog<-targetColTransform[targetCol]=='log'
     ylim<-range(plotInfo,na.rm=TRUE)
@@ -76,7 +76,7 @@ for(targetCol in targetCols){
     pairPos[as.character(pair)]
   }))
   catPos<-structure(1:length(unique(hiv$fluidSelectDonor)),names=unique(hiv$fluidSelectDonor[order(hiv$isDonor,hiv$Selection=='UT',!hiv$isGenital,hiv$Selection=='A2',decreasing=TRUE)]))
-  pdf(sprintf('out/boxWhisker/7line_%s.pdf',sub('/','_',targetCol)),width=8,height=4)
+  pdf(file.path('out','boxWhisker',sprintf('7line_%s.pdf',sub('/','_',targetCol))),width=8,height=4)
     par(mar=c(3.2,5,.1,.1))
     logY<-ifelse(targetColTransform[targetCol]=='log','y','')
     plot(1,1,type='n',xlim=c(.4,length(unique(hiv$fluidSelectDonor))+.6),ylim=range(hiv[selector,targetCol]),ylab=targetCols[targetCol],log=logY,las=1,xaxt='n',xlab='',mgp=c(4,1,0),xaxs='i')
