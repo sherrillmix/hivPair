@@ -1,4 +1,7 @@
-# Code for "Resistance to type 1 interferons is a major determinant of HIV-1 transmission fitness"
+# Code for the paper "Resistance to type 1 interferons is a major determinant of HIV-1 transmission fitness"
+
+## Data
+The data used in the paper is in [`data/Iyer2016_Data.csv`](data/Iyer2016_Data.csv).
 
 ## Necessary packages
 The code uses several packages. If you'd like to install them all in one shot, you can do:
