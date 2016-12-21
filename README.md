@@ -1,7 +1,7 @@
 # Code for the paper "Resistance to type 1 interferons is a major determinant of HIV-1 transmission fitness"
 
 ## Data
-The data used in the paper is in [`data/Iyer2016_Data.csv`](data/Iyer2016_Data.csv). All columns are as described in the paper. The "Censored IFNbeta Vres" is TRUE where the measurement of IFNbeta Vres was lower than the limit of detection and so the true measurement should be less than or equal the value in the "IFNbeta Vres" column.
+The data used in the paper is in [`data/Iyer2016_Data.csv`](data/Iyer2016_Data.csv). All columns are as described in the paper. The "Censored IFNbeta Vres" is TRUE where the measurement of IFNbeta Vres was lower than the limit of detection and so the unobserved true measurement should be less than or equal the value in the "IFNbeta Vres" column.
 
 ## Necessary packages
 The code uses several packages. If you'd like to install them all in one shot, you can do:
@@ -35,17 +35,22 @@ Note that the generated plots were tweaked for clarity and presentation prior to
 Plot output should resemble:
 
 ### PCA
-[PCA plot](examples/pca-1.png)
+![PCA plot](examples/pca-1.png)
+
+### Centroid distance
+![Centroid distance plot](examples/centroidDist-0.png)
+
 ### ROC
-[ROC plot](examples/roc-0.png)
+![ROC plot](examples/roc-0.png)
 
 ### Box and whisker
-[Box and whisker plot](examples/Env_RT ratio.png)
+![Box and whisker plot](examples/Env_RT ratio.png)
 
 ### Seven line point plot
-[Seven line point plot](examples/7line_IFNbeta Vres.png)
+![Seven line point plot](examples/7line_IFNbeta Vres.png)
 
 ### Bayesian
 Note that stochastic sampling is used to estimate the posterior probabilities so the plots from each run will be slightly different. Also the final figures for the paper were generated using additional iterations to produce smoother estimates.
-[Bayesian posterior distributions](examples/bayesIFNbeta IC50 (pg_ml).png)
+
+![Bayesian posterior distributions](examples/bayesIFNbeta IC50 (pg_ml).png)
 
