@@ -26,9 +26,7 @@ R|3.3.1
 To generate all plots:
  1. clone/download the repository 
  2. start R with its working directory in the repository directory
- 3. in R, run the command:
-
-    source('runAll.R')
+ 3. in R, run the command: `source('runAll.R')`
 
 This will generate PCA, ROC, box and whisker and Bayesian plots in the `out` directory. Calculations may take 20-60 minutes. The number of Bayesian simulations have been turned down from that used for the paper for computational simplicity.
 
