@@ -1,6 +1,9 @@
-library(vipor)
-library(cluster)
+library('vipor')
+library('cluster') #for ellipsoidhull
+
 if(!exists('hiv'))source('readData.R')
+
+#function to draw a convex hull or minimum spanning ellipse around a set of points
 expandedHull<-function(xys,magnification=1,type=c('convex','ellipse')){
   type<-match.arg(type)
   centroid<-apply(xys,2,mean)
@@ -11,22 +14,26 @@ expandedHull<-function(xys,magnification=1,type=c('convex','ellipse')){
 }
 
 selector<-!apply(is.na(hiv[,goodTargetCols]),1,any)
+#arbitrary flips of the x- and y-axis of the PCA
 xFlip<--1
 yFlip<- -1
 subselect<-hiv[selector,]$Selection=='UT'
 scaled<-apply(hiv[selector,goodTargetCols],2,function(x,subselect)(x-mean(x[subselect]))/sd(x[subselect]),rep(TRUE,sum(selector)))
 pca<-prcomp(scaled,scale.=FALSE)
-pcaPoints<-t(t(scaled %*% pca$rotation)/pca$sdev/sqrt(nrow(pca$x))) #figure out the point positions based on scores scaled by standard deviations
+#figure out the point positions based on scores scaled by standard deviations
+pcaPoints<-t(t(scaled %*% pca$rotation)/pca$sdev/sqrt(nrow(pca$x)))
 importance<-summary(pca)$importance[2,]
 cols<-rainbow(length(unique(hiv$fluidSelectDonor)),alpha=.6)
 cols2<-rainbow(length(unique(hiv$fluidSelectDonor)),alpha=.8)
 cols3<-rainbow(length(unique(hiv$fluidSelectDonor)),alpha=.02)
 names(cols)<-names(cols2)<-names(cols3)<-sort(unique(hiv$fluidSelectDonor))
+#plot pca plots
 pdf(file.path('out','pca.pdf'),width=5,height=5)
   for(subfig2 in c(FALSE,TRUE)){
   select<-1:2
   xlim <- ylim <- range(yFlip*pcaPoints[,select])
-  pcaArrows<-t(t(pca$rotation[,select])*pca$sdev[select]*sqrt(nrow(pca$x)))	#figure out the arrow positions based on loadings scaled by sdev
+  #figure out the arrow positions based on loadings scaled by sdev
+  pcaArrows<-t(t(pca$rotation[,select])*pca$sdev[select]*sqrt(nrow(pca$x)))
   xlimArrow<-range(xFlip*pcaArrows[,1])
   ylimArrow<-range(yFlip*pcaArrows[,2])
   ratio <- max(xlimArrow/xlim, ylimArrow/ylim)
@@ -94,6 +101,7 @@ recipientDist<-apply(recipientDiff^2,1,sum)
 
 cols<-rainbow(length(unique(hiv[,'Pair ID'])),alpha=.7)
 names(cols)<-sort(unique(hiv[,'Pair ID']))
+#plot distance plots
 pdf(file.path('out','centroidDist.pdf'))
   par(mar=c(5.2,4,.1,.1))
   fluidSelectDonorFactor<-factor(

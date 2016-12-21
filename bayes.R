@@ -108,6 +108,7 @@ stanCode<-"
   }
 "
 
+#generate arbitrary indices for use within Stan for the various groupings
 assignGroups<-function(x,selector=rep(TRUE,length(x)),outId=99999){
   cladeBs<-unique(x[selector])
   notCladeBs<-unique(x[!selector])
@@ -213,7 +214,8 @@ cachedTabs<-lapply(targetCols,function(targetCol){
   sims<-as.array(fit)
   dim(sims)<-c(prod(dim(sims)[c(1,2)]),dim(sims)[3])
   colnames(sims)<-dimnames(as.array(fit))[[3]]
-  #
+
+  #convert columns from N(0,1) to appropriate values
   converted<-convertCols(
     list('recipients\\[[0-9]+\\]','genitals\\[[0-9]+\\]','clades\\[[0-9]+\\]','alphas\\[[0-9]+\\]','betas\\[[0-9]+\\]','recipientAlphas\\[[0-9]\\]','recipientBetas\\[[0-9]\\]',sprintf('sigmas[%d]',1:max(dat$groupIds))),
     list('metaRecipientMu','metaGenitalMu','metaCladeMu','metaAlphaMu','metaBetaMu','metaRecipientAlphaMu','metaRecipientBetaMu',sprintf('metaSigmaMu[%d]',dat$groupTypes)),
@@ -225,6 +227,7 @@ cachedTabs<-lapply(targetCols,function(targetCol){
   donorFolds<-converted[,colnames(converted)[-grep('\\[',colnames(converted))]]/converted[,'metaDonorMu']
   colnames(donorFolds)<-sprintf('fold_%s',colnames(donorFolds))
   converted<-cbind(converted,donorFolds)
+  #calculate stats
   stats<-apply(converted,2,function(x)c('mean'=mean(x),quantile(x,c(.025,.05,.95,.975)),'gt0'=mean(x>0),'lt0'=mean(x<0),n=length(x)))
   stats2<-c(
     'p(beta>alpha)'=mean(converted[,'metaBetaMu']>converted[,'metaAlphaMu']),
@@ -236,6 +239,7 @@ cachedTabs<-lapply(targetCols,function(targetCol){
     'p(recipient<alpha)'=mean(converted[,'metaRecipientMu']<converted[,'metaAlphaMu']),
     'p(recipient<beta)'=mean(converted[,'metaRecipientMu']<converted[,'metaBetaMu'])
   )
+  #calculate histograms
   tabbed<-apply(converted,2,function(x)table(cut(x,bins))/length(x))
   return(list('tabs'=tabbed,'stats'=stats,'stats2'=stats2,'bins'=bins))
 })
@@ -246,7 +250,8 @@ allPars<-c("metaDonorMu", "metaDonorSd", "metaRecipientMu", "metaRecipientSd", "
 #generate figures and stats
 for(targetCol in targetCols){
   message(targetCol)
-  #
+
+  #figure out labels and transformations
   if(targetColTransform[targetCol]=='identity'){
     transform<-function(x)x
     logX<-''
@@ -258,7 +263,8 @@ for(targetCol in targetCols){
     xlab<-sprintf('Fold increase in %s',gsub('\n',' ',targetCol))
     if(targetColTransform[targetCol]=='logit')xlab<-sprintf('%s odds',xlab)
   }
-  #
+
+  #load cached data
   fit<-fits[[targetCol]][['fit']]
   dat<-fits[[targetCol]][['dat']]
   tabs<-cachedTabs[[targetCol]][['tabs']]
@@ -266,7 +272,8 @@ for(targetCol in targetCols){
   stats2<-cachedTabs[[targetCol]][['stats2']]
   bins<-cachedTabs[[targetCol]][['bins']]
   xlim<-range(bins)
-  #
+
+  #figure out target columns
   recipientCols<-grep('recipients\\[[0-9]+\\]',colnames(tabs))
   genitalCols<-grep('genitals\\[[0-9]+\\]',colnames(tabs))
   cladeCols<-grep('clades\\[[0-9]+\\]',colnames(tabs))
@@ -277,7 +284,8 @@ for(targetCol in targetCols){
   metaVarCols<-structure(sprintf('metaSigmaMu[%d]',groupTypeIds),names=names(groupTypeIds))
   varCols<-sprintf('sigmas[%d]',1:max(dat$groupIds))
   varColsByGroup<-tapply(varCols,groupTypes,c)
-  #
+
+  #Add nicer names
   outStatCols<-c(
     'Recipient fold change'='metaRecipientMu',
     'Genital fold change'='metaGenitalMu',
@@ -292,6 +300,8 @@ for(targetCol in targetCols){
     names(outStatCols)<-sub('fold ','',names(outStatCols))
     outStatCols<-c(outStatCols,folds)
   }
+
+  #calculate statistics
   outStats<-as.data.frame(t(stats[,outStatCols]))
   outStats$mean<-transform(outStats$mean)
   outStats$'95% CrI'<-sprintf('%s-%s',sapply(signif(transform(outStats[,'2.5%']),digits=3),formatC,digits=3,format='fg',flag='#'),sapply(signif(transform(outStats[,'97.5%']),digits=3),formatC,digits=3,format='fg',flag='#'))
@@ -305,13 +315,8 @@ for(targetCol in targetCols){
   outStats2<-data.frame('probability'=stats2)
   outStats2[outStats2$probability==0,'probability']<-sprintf("<%s",format(1/outStats[1,'n'],digits=1,scientific=FALSE))
   write.csv(outStats2,file.path('out','bayes',sprintf('stats2_%s.csv',sub('/','_',targetCol))))
-  #
-  tmp<-cladeBIds
-  names(tmp)<-sprintf('Clade %s',names(cladeBIds))
-  #just using genitals directly since first 3 were genitals but really should use an id for genital instead
-  tmp2<-structure(1:100,names=sprintf('Genital %d',1:100))
-  converts<-list('recipients'=recipientIds,'clades'=tmp,'alphas'=alphaIds,'betas'=betaIds,'recipientAlphas'=recipientAlphaIds,'recipientBetas'=recipientBetaIds,'genitals'=tmp2)
-  #
+
+  #plot summaries of the various posterior distributions
   pdf(file.path('out','bayes',sprintf('bayes%s.pdf',sub('/','_',targetCol))),height=9,width=6)
     par(mfrow=c(6,1),las=1,mar=c(3,3.6,1.1,.1))
     ylims<-c(0,max(tabs[,c(colnames(tabs)[c(recipientCols,cladeCols,genitalCols,alphaCols,betaCols)],'metaRecipientMu','metaGenitalMu','metaCladeMu','metaAlphaMu','metaBetaMu')]))
@@ -365,15 +370,15 @@ check<-mclapply(targetCols,function(targetCol){
   message(targetCol)
   fit<-fits[[targetCol]][['fit']]
   dat<-fits[[targetCol]][['dat']]
-  #
+  #get samples in to handy form
   sims<-as.array(fit)
   dim(sims)<-c(prod(dim(sims)[c(1,2)]),dim(sims)[3])
   colnames(sims)<-dimnames(as.array(fit))[[3]]
-  #
+  #calculate simulated values based on the individual mu and sigma
   indivMuCols<-sprintf('indivMu[%d]',1:dat[['N']])
   indivSdCols<-sprintf('indivSigma[%d]',1:dat[['N']])
   simFits<-mapply(function(mu,sigma)rnorm(nrow(sims),sims[,mu],sims[,sigma]),indivMuCols,indivSdCols,SIMPLIFY=FALSE)
-  #
+  #output files to raster to reduce filesize
   tmp<-tempfile()
   png(file=tmp,width=2000,height=2000,res=100)
     print(traceplot(fit,pars=allPars))
