@@ -1,10 +1,10 @@
 library('rstan')
-library('vioplot')
+library('vioplot') #for violin plot in check figure
 library('png') #for raster inside pdf
-library(parallel)
+library('parallel')
 
-#for parallel
-nThreads<-5
+#set up parallel options
+nThreads<-5 #used 50 for final figures
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
@@ -186,6 +186,7 @@ if(!exists('fits')){
       stanCode<-sub('real ic50\\[N\\];','real ic50[N];\nreal censorDown[N];',stanCode)
       dat<-c(dat,list('censorDown'=cutVal))
     }
+    #used iter=100000 and thin=25 for final figures
     fit <- stan(model_code = stanCode, data = dat, iter=4000, chains=nThreads,thin=10,control=list(adapt_delta=.999,stepsize=.01))
     return(list('fit'=fit,'dat'=dat,stan=stanCode))
   })
@@ -242,18 +243,19 @@ names(cachedTabs)<-targetCols
 
 allPars<-c("metaDonorMu", "metaDonorSd", "metaRecipientMu", "metaRecipientSd", "metaGenitalMu", "metaGenitalSd","metaCladeMu","metaCladeSd","donors", "sigmas", "metaSigmaMu", "metaSigmaSigma", "genitals", "recipients", "clades","metaAlphaMu","metaAlphaSd","metaBetaMu","metaBetaSd","alphas","betas","metaRecipientAlphaMu","metaRecipientAlphaSd","metaRecipientBetaMu","metaRecipientBetaSd","recipientAlphas","recipientBetas")
 
+#generate figures and stats
 for(targetCol in targetCols){
   message(targetCol)
   #
   if(targetColTransform[targetCol]=='identity'){
     transform<-function(x)x
     logX<-''
-    xlab<-sprintf('Increase in %s',gsub('\n',' ',targetCols[targetCol]))
+    xlab<-sprintf('Increase in %s',gsub('\n',' ',targetCol))
   }
   else{
     transform<-function(x)10^x
     logX<-'x'
-    xlab<-sprintf('Fold increase in %s',gsub('\n',' ',targetCols[targetCol]))
+    xlab<-sprintf('Fold increase in %s',gsub('\n',' ',targetCol))
     if(targetColTransform[targetCol]=='logit')xlab<-sprintf('%s odds',xlab)
   }
   #
@@ -358,6 +360,7 @@ for(targetCol in targetCols){
   dev.off()
 }
 
+#generate figures to check convergence and posterior predictives
 check<-mclapply(targetCols,function(targetCol){
   message(targetCol)
   fit<-fits[[targetCol]][['fit']]
@@ -372,13 +375,13 @@ check<-mclapply(targetCols,function(targetCol){
   simFits<-mapply(function(mu,sigma)rnorm(nrow(sims),sims[,mu],sims[,sigma]),indivMuCols,indivSdCols,SIMPLIFY=FALSE)
   #
   tmp<-tempfile()
-  png(file=tmp,width=3000,height=3000,res=150)
+  png(file=tmp,width=2000,height=2000,res=100)
     print(traceplot(fit,pars=allPars))
   dev.off()
   tmp2<-tempfile()
-  png(file=tmp2,width=3000,height=3000,res=150)
+  png(file=tmp2,width=2000,height=2000,res=100)
     par(mar=c(4,5,2,0))
-    plot(1,1,type='n',xlim=c(1,dat[['N']])+c(-1,1),ylim=range(unlist(simFits)),xlab='Virus ID',ylab=sprintf('Log10 %s',targetCols[targetCol]),xaxs='i',cex.axis=1.5,cex.lab=2,main='Posterior predictive distributions',cex.main=2)
+    plot(1,1,type='n',xlim=c(1,dat[['N']])+c(-1,1),ylim=range(unlist(simFits)),xlab='Virus ID',ylab=sprintf('Log10 %s',targetCol),xaxs='i',cex.axis=1.5,cex.lab=2,main='Posterior predictive distributions',cex.main=2)
     do.call(vioplot,c('x'=list(simFits[[1]]),simFits[-1],'add'=list(TRUE),'colMed'=list(NA),'col'=list('#00000033')))
     points(1:length(dat[['ic50']]),dat[['ic50']],col='red',pch='+',lwd=2)
   dev.off()
