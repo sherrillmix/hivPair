@@ -383,7 +383,7 @@ check<-mclapply(targetCols,function(targetCol){
     points(1:length(dat[['ic50']]),dat[['ic50']],col='red',pch='+',lwd=2)
   dev.off()
   pdf(file.path('out','bayes',sprintf('fit%s.pdf',sub('/','_',targetCol))),width=20,height=20)
-    print(plot(fit,pars=allPars))
+    print(plot(fit,pars=allPars)+theme_minimal(base_family="Helvetica"))
     #use rasters for file size
     par(mai=c(0,0,0,0))
     plot(c(0,1),c(0,1),type="n")
