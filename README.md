@@ -35,13 +35,17 @@ Note that the generated plots were tweaked for clarity and presentation prior to
 Plot output should resemble:
 
 ### PCA
-
+[PCA plot](examples/pca-1.png)
 ### ROC
+[ROC plot](examples/roc-0.png)
 
 ### Box and whisker
+[Box and whisker plot](examples/Env_RT ratio.png)
 
-### Seven lines
+### Seven line point plot
+[Seven line point plot](examples/7line_IFNbeta Vres.png)
 
 ### Bayesian
 Note that stochastic sampling is used to estimate the posterior probabilities so the plots from each run will be slightly different. Also the final figures for the paper were generated using additional iterations to produce smoother estimates.
+[Bayesian posterior distributions](examples/bayesIFNbeta IC50 (pg_ml).png)
 
