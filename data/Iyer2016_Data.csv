@@ -1,4 +1,4 @@
-"Name","Subtype","Gender","Donor/Recipient","Pair ID","Fluid","Selection","Env/RT ratio","Infectivity (RLU/pg RT)","Replicative capacity (ng p24/ml)","IFNa2 IC50 (pg/ml)","IFNbeta IC50 (pg/ml)","IFNa2 Vres","IFNbeta Vres","p24 release","Censored IFNbeta Vres","Accession"
+"Name","Subtype","Gender","Donor/Recipient","Pair ID","Fluid","Selection","Env/RT ratio","Infectivity (RLU/pg RT)","Replicative capacity (ng p24/ml)","IFNa2 IC50 (pg/ml)","IFNbeta IC50 (pg/ml)","IFNa2 Vres","IFNbeta Vres","p24 release","Censored IFNbeta Vres","GenBank accession"
 "CH1064.PL.080409.A2.01","C","Female","Donor",7,"PL","A2",0.200738,3149.8775,414.32384,0.772575291989122,0.00186000967863391,19.0787238068134,0.0320304006939066,NA,TRUE,"KY111987"
 "CH1064.PL.080409.A2.02","C","Female","Donor",7,"PL","A2",0.728996,2853.8625,312.201925,0.781010548567237,0.000116271380454791,21.3137238601818,0.0438279315407709,NA,TRUE,"KY111988"
 "CH1064.PL.080409.A2.03","C","Female","Donor",7,"PL","A2",0.5501142,2419.14003273322,199.15425,0.700213771118797,0.000714082007392724,12.8742472515428,0.45091398654024,36.804327210867,FALSE,"KY111989"
