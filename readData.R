@@ -111,8 +111,10 @@ finalCsv$Donor.or.Recipient<-sub(' ','-',finalCsv$Donor.or.Recipient)
 #convert to order in paper
 finalCsv$Pair.ID<-sapply(finalCsv$Pair.ID,function(x)which(names(pairColors)==x))
 names(finalCsv)<-names(desiredCols)
+finalCsv[,'GenBank accession']<-accessions[finalCsv$Name,1]
+if(any(is.na(finalCsv[,'GenBank accession'])))stop('NA accession number')
+if(any(table(finalCsv[,'GenBank accession'])>1))stop('Duplicate accession number')
 finalCsv$Name[finalCsv$Fluid!='PL']<-sub('\\.UT\\.','.',finalCsv$Name[finalCsv$Fluid!='PL'])
-finalCsv$Accession<-accessions[finalCsv$Name,1]
 write.csv(finalCsv,'out/Iyer2016_Data.csv',row.names=FALSE)
 
 
