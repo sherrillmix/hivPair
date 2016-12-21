@@ -6,4 +6,4 @@ source('prinComp.R')
 #generate ROC plots
 source('roc.R')
 #run Bayesian models
-source('bayesIC50.R')
+source('bayes.R')
