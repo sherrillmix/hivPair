@@ -1,0 +1,86 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="github-pandoc.css" type="text/css" />
+</head>
+<body>
+<h1 id="code-for-the-paper-resistance-to-type-1-interferons-is-a-major-determinant-of-hiv-1-transmission-fitness">Code for the paper &quot;Resistance to type 1 interferons is a major determinant of HIV-1 transmission fitness&quot;</h1>
+<h2 id="data">Data</h2>
+<p>The data used in the paper is in <a href="data/Iyer2016_Data.csv"><code>data/Iyer2016_Data.csv</code></a>. All columns are as described in the paper. The &quot;Censored IFNbeta Vres&quot; is TRUE where the measurement of IFNbeta Vres was lower than the limit of detection and so the unobserved true measurement should be less than or equal the value in the &quot;IFNbeta Vres&quot; column.</p>
+<h2 id="necessary-packages">Necessary packages</h2>
+<p>The code uses several packages. If you'd like to install them all in one shot, you can do:</p>
+<pre><code>install.packages(c(&#39;cluster&#39;,&#39;rstan&#39;,&#39;vioplot&#39;,&#39;png&#39;,&#39;vipor&#39;,&#39;ROCR&#39;,&#39;pROC&#39;))</code></pre>
+<p>The code also uses the <code>parallel</code> package but that is included in base R and should not require installation. Versions used in the paper were:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Package</th>
+<th align="left">Version</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">cluster</td>
+<td align="left">2.0.4</td>
+</tr>
+<tr class="even">
+<td align="left">rstan</td>
+<td align="left">2.13.2</td>
+</tr>
+<tr class="odd">
+<td align="left">vioplot</td>
+<td align="left">0.2</td>
+</tr>
+<tr class="even">
+<td align="left">png</td>
+<td align="left">0.1-7</td>
+</tr>
+<tr class="odd">
+<td align="left">vipor</td>
+<td align="left">0.4.4</td>
+</tr>
+<tr class="even">
+<td align="left">ROCR</td>
+<td align="left">1.0-7</td>
+</tr>
+<tr class="odd">
+<td align="left">pROC</td>
+<td align="left">1.8</td>
+</tr>
+<tr class="even">
+<td align="left">R</td>
+<td align="left">3.3.1</td>
+</tr>
+</tbody>
+</table>
+<h2 id="generating-all-plots">Generating all plots</h2>
+<p>To generate all plots:</p>
+<ol>
+<li>clone/download the repository</li>
+<li>start R with its working directory in the repository directory</li>
+<li>in R, run the command: <code>source('runAll.R')</code></li>
+</ol>
+<p>This will generate PCA, ROC, box and whisker and Bayesian plots in the <code>out</code> directory. Calculations may take 20-60 minutes. The number of Bayesian simulations have been turned down from that used for the paper for computational simplicity.</p>
+<p>The generated plots were tweaked, without altering the underlying data, for clarity and presentation prior to inclusion in the paper.</p>
+<h2 id="example-plots">Example plots</h2>
+<p>Plot output should resemble:</p>
+<h3 id="pca">PCA</h3>
+<p><img src="examples/pca-1.png" alt="PCA plot" /></p>
+<h3 id="centroid-distance">Centroid distance</h3>
+<p><img src="examples/centroidDist-1.png" alt="Centroid distance plot" /></p>
+<h3 id="roc">ROC</h3>
+<p><img src="examples/roc-0.png" alt="ROC plot" /></p>
+<h3 id="box-and-whisker">Box and whisker</h3>
+<p><img src="examples/Env_RT%20ratio.png" alt="Box and whisker plot" /></p>
+<h3 id="seven-line-point-plot">Seven line point plot</h3>
+<p><img src="examples/7line_IFNbeta%20Vres.png" alt="Seven line point plot" /></p>
+<h3 id="bayesian">Bayesian</h3>
+<p>Note that stochastic sampling is used to estimate the posterior probabilities so the plots from each run will be slightly different. Also the final figures for the paper were generated using additional iterations to produce smoother estimates.</p>
+<p><img src="examples/bayesIFNbeta%20IC50%20(pg_ml).png" alt="Bayesian posterior distributions" /></p>
+</body>
+</html>
