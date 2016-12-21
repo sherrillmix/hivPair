@@ -96,13 +96,14 @@ cols<-rainbow(length(unique(hiv[,'Pair ID'])),alpha=.7)
 names(cols)<-sort(unique(hiv[,'Pair ID']))
 pdf(file.path('out','centroidDist.pdf'))
   par(mar=c(5.2,4,.1,.1))
-  vpPlot(factor(hiv[selector,'fluidSelectDonor'],levels=unique(hiv$fluidSelectDonor[order(hiv$isDonor,hiv$Selection=='UT',hiv$Fluid=='PL',hiv$Selection=='A2',decreasing=TRUE)])),recipientDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair ID'])],pch=21,ylab='Distance to recipient samples centroid',las=2)
+  fluidSelectDonorFactor<-factor(
+    gsub(' ','\n',hiv[selector,'fluidSelectDonor']),
+    levels=gsub(' ','\n',unique(hiv$fluidSelectDonor[order(hiv$isDonor,hiv$Selection=='UT',hiv$Fluid=='PL',hiv$Selection=='A2',decreasing=TRUE)]))
+  )
+  vpPlot(fluidSelectDonorFactor,recipientDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair ID'])],pch=21,ylab='Distance to recipient samples centroid',las=2)
   legend('topright',names(cols),pch=21,pt.bg=cols,col=NA,inset=.01,title='Pair',ncol=2)
-  vpPlot(factor(hiv[selector,'fluidSelectDonor'],levels=unique(hiv$fluidSelectDonor[order(hiv$isDonor,hiv$Selection=='UT',hiv$Fluid=='PL',hiv$Selection=='A2',decreasing=TRUE)])),pairRecDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair ID'])],pch=21,ylab='Distance to within-pair recipient centroid',las=2,cex=2)
+  vpPlot(fluidSelectDonorFactor,pairRecDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair ID'])],pch=21,ylab='Distance to within-pair recipient centroid',las=2,cex=2)
   legend('topright',names(cols),pch=21,pt.bg=cols,col=NA,inset=.01,title='Pair',ncol=2,cex=2)
-  pos<-vpPlot(factor(hiv[selector,'fluidSelectDonor'],levels=unique(hiv$fluidSelectDonor[order(hiv$isDonor,hiv$Selection=='UT',hiv$Fluid=='PL',hiv$Selection=='A2',decreasing=TRUE)])),pairRecDist,las=3,col=NA,bg=cols[as.character(hiv[selector,'Pair ID'])],pch=21,ylab='Distance to within-pair recipient centroid',las=2)
-  legend('topright',names(cols),pch=21,pt.bg=cols,col=NA,inset=.01,title='Pair',ncol=2)
-  text(pos,pairRecDist,hiv[selector,'Name'],cex=.2) 
 dev.off()
 
 
