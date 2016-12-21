@@ -38,7 +38,7 @@ Plot output should resemble:
 ![PCA plot](examples/pca-1.png)
 
 ### Centroid distance
-![Centroid distance plot](examples/centroidDist-0.png)
+![Centroid distance plot](examples/centroidDist-1.png)
 
 ### ROC
 ![ROC plot](examples/roc-0.png)
