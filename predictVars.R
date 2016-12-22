@@ -2,8 +2,8 @@ library(glmnet)
 library(glmnetPlotR)
 if(!exists('onlyDiffAA'))source('parseSeqs.R')
 
-#modelInput<-as.data.frame(cbind(onlyDiffAA,onlyDiff))
-modelInput<-as.data.frame(cbind(onlyDiffAA))
+modelInput<-as.data.frame(cbind(onlyDiffAA,onlyDiff))
+#modelInput<-as.data.frame(cbind(onlyDiffAA))
 #modelInput$pair<-as.factor(hiv$Pair.ID)
 modelMatrix<-model.matrix(formula(sprintf('~ %s',paste(colnames(modelInput),collapse='+'))),modelInput)
 
