@@ -15,6 +15,10 @@ lassoCols<-c(
 targetColTransform['Autologous.IC50']<-'log'
 targetColTransform['Bnaber.IC50']<-'log'
 
+#arbitrarily take first recipient virus
+hiv$firstRecipient<-FALSE
+hiv[!hiv$donor&hiv$select=='UT','firstRecipient']<-ave(hiv[!hiv$donor&hiv$select=='UT','firstRecipient'],hiv[!hiv$donor&hiv$select=='UT','baseName'],FUN=function(x)c(TRUE,rep(FALSE,length(x)-1)))
+
 aaFits<-mclapply(names(lassoCols),function(targetCol){
   message(targetCol)
   thisTransform<-targetColTransform[targetCol]
@@ -28,7 +32,7 @@ aaFits<-mclapply(names(lassoCols),function(targetCol){
     stop(simpleError('Unknown tranform'))
   }
   #selector<-hiv$donor&!is.na(hiv[,targetCol])
-  selector<-!is.na(hiv[,targetCol])&hiv$donor
+  selector<-!is.na(hiv[,targetCol])&(hiv$donor|hiv$firstRecipient)
   #condense columns with no differences
   collapsedCols<-ave(colnames(modelMatrix[selector,]),apply(modelMatrix,2,paste,collapse=''),FUN=function(xx)paste(xx,collapse=','))
   collapsedModel<-modelMatrix
