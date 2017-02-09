@@ -11,7 +11,9 @@ isoTable<-tapply(iso$infectPerVirus,list(paste(iso$pair,ifelse(iso$donor,'D','R'
 isoTable<-isoTable[,order(colnames(isoTable)!='UT',colnames(isoTable)!='A2')]
 cols<-rainbow.lab(3)
 names(cols)<-unique(iso$select)
-pdf('out/iso.pdf')
-  barplot(t(isoTable*100),beside=TRUE,ylab="Positive wells/vRNA (%)",col=cols[colnames(isoTable)],las=1)
-  legend('topright',names(cols),fill=cols)
+prettyNames<-c('UT'="Untreated",'A2'="IFNa2 treated","BE"="IFNb treated")
+pdf('out/iso.pdf',width=6,height=4)
+  par(mar=c(2,3,.1,.1))
+  barplot(t(isoTable*100),beside=TRUE,ylab="Positive wells/viral genome (%)",col=cols[colnames(isoTable)],las=1,mgp=c(2,.8,0))
+  legend('topright',prettyNames[names(cols)],fill=cols)
 dev.off()
