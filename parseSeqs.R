@@ -8,8 +8,7 @@ refPos<-cumsum(seqMat[refName,]!='-')
 seqMat<-seqMat[hiv$seqId,]
 if(any(degap(apply(seqMat,1,paste,collapse=''))!=hiv$seq))stop(simpleError('hiv metadata and alignment mismatched'))
 colnames(seqMat)<-sprintf('nt%s.%s',refPos,ave(refPos,refPos,FUN=function(x)1:length(x)))
-nBase<-apply(seqMat,2,function(x)sum(x!='-'))
-startEnd<-range(which(nBase/nrow(seqMat)>.9))
+nBase<-apply(seqMat,2,function(x)sum(x!='-')) startEnd<-range(which(nBase/nrow(seqMat)>.9))
 seqMat<-seqMat[,nBase>10&1:ncol(seqMat) %in% startEnd[1]:startEnd[2]]
 onlyDiff<-seqMat[,apply(seqMat,2,function(x)length(unique(x[x!='-']))>1)]
 
@@ -64,4 +63,28 @@ dev.off()
 png('out/diff_ifna.png',width=2000,height=2000,res=200)
 par(mar=c(4,4,1,9))
 plotDNA(apply(onlyDiff,1,paste,collapse='')[hiv$donor][order(hiv$IFNa2.Pooled.Donor.cells.IC50..pg..ml[hiv$donor])])
+dev.off()
+
+
+allNonGap<-range(which(apply(seqMat!='-',2,all)))
+noGapSeqs<-apply(seqMat[,allNonGap[1]:allNonGap[2]],1,paste,collapse='')
+xx<-degap(noGapSeqs)
+gcPos<-gregexpr('CG',xx)
+gcs<-sapply(gcPos,length)/nchar(xx)
+gcaPos<-gregexpr('[AT]CG[AT]',xx)
+gcas<-sapply(gcaPos,length)/nchar(xx)
+gcaPerGc<-gcas/gcs
+pdf('out/gc.pdf')
+  vpPlot(ifelse(hiv$donor,'Donor','Recipient')[hiv$select=='UT'],gcs[hiv$select=='UT'],pch=21,bg=rainbow(max(hiv$Pair.ID))[hiv$Pair.ID[hiv$select=='UT']],ylab='CG/nucleotide',las=1)
+  for(ii in unique(hiv$Pair.ID)){
+    main<-paste(unique(hiv$baseName[hiv$Pair.ID==ii][order(!hiv$donor[hiv$Pair.ID==ii])]),collapse=',')
+    vpPlot(ifelse(hiv$donor,'Donor','Recipient')[hiv$Pair.ID==ii&hiv$select=='UT'],gcs[hiv$Pair.ID==ii&hiv$select=='UT'],pch=21,bg=rainbow(max(hiv$Pair.ID))[hiv$Pair.ID][hiv$Pair.ID==ii],ylab='CG/nucleotide',main=main,las=1,ylim=range(gcs))
+  }
+  vpPlot(ifelse(hiv$donor,'Donor','Recipient')[hiv$select=='UT'],gcas[hiv$select=='UT'],pch=21,bg=rainbow(max(hiv$Pair.ID))[hiv$Pair.ID[hiv$select=='UT']],ylab='[AT]CG[AT]/nucleotide',las=1)
+  for(ii in unique(hiv$Pair.ID)){
+    main<-paste(unique(hiv$baseName[hiv$Pair.ID==ii][order(!hiv$donor[hiv$Pair.ID==ii])]),collapse=',')
+    vpPlot(ifelse(hiv$donor,'Donor','Recipient')[hiv$Pair.ID==ii&hiv$select=='UT'],gcas[hiv$Pair.ID==ii&hiv$select=='UT'],pch=21,bg=rainbow(max(hiv$Pair.ID))[hiv$Pair.ID][hiv$Pair.ID==ii],ylab='[AT]CG[AT]/nucleotide',main=main,las=1,ylim=range(gcas))
+  }
+  vpPlot(ifelse(hiv$donor,'Donor','Recipient')[hiv$select=='UT'],gcaPerGc[hiv$select=='UT'],pch=21,bg=rainbow(max(hiv$Pair.ID))[hiv$Pair.ID[hiv$select=='UT']],ylab='[AT]CG[AT]/CG',las=1)
+  plotDNA(noGapSeqs)
 dev.off()
