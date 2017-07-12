@@ -192,3 +192,17 @@ write.csv(out,'out/centroidDist.csv',row.names=FALSE)
 pdf('out/tree.pdf',height=50,width=20);par(mar=c(4,1,1,10));plot(as.dendrogram(hclust(dists)),horiz=TRUE);dev.off()
 
 
+library('Rtsne')
+selector<-!apply(is.na(hiv[,names(goodTargetCols)]),1,any)
+tmp<-hiv[selector,names(goodTargetCols)]
+rownames(tmp)<-hiv[selector,'Renamed']
+tsne<-Rtsne(tmp,dims=2,perplexity=10,verbose=TRUE,max_iter=2000)
+cols<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.6)
+pch<-structure(c(21,21,21),names=c('PL','SE','CV'))
+cols2<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.8)
+cols3<-rainbow.lab(length(unique(hiv$fluidSelectDonor)),alpha=.02)
+names(cols)<-names(cols2)<-names(cols3)<-sort(unique(hiv$fluidSelectDonor))
+pdf('out/tnse.pdf')
+  plot(tsne$Y,pch=21,bg=cols[hiv[selector,'fluidSelectDonor']])
+  legend('topright',names(cols),pt.bg=cols,pch=21,cex=.8)
+dev.off()
