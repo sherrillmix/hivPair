@@ -1,5 +1,6 @@
 if(!exists('rawSeqMat'))source('parseSeqs.R')
 
+
 allNonGap<-range(which(apply(rawSeqMat!='-',2,all)))
 alignedSeqs<-apply(rawSeqMat[,allNonGap[1]:allNonGap[2]],1,paste,collapse='')
 degappedSeqs<-degap(alignedSeqs)
@@ -76,3 +77,41 @@ for(ii in unique(hiv$Pair.ID)){
     axis(2,1:sum(selector),hiv[selector,'Renamed'][order(hiv[selector,'donor'])],cex.axis=.5,las=1,mgp=c(1,.15,0),tcl=-.05)
   dev.off()
 }
+
+
+
+tf6<-readFaDir('gc')
+tf6$tf<-grepl('[tT]/?[fF]',tf6$name)
+tf6<-tf6[order(tf6$file,!tf6$tf),]
+if(!file.exists('out/tf.png')){
+  png('out/tf.png',height=3000,width=3000,res=300)
+  plotDNA(tf6$seq)
+  dev.off()
+}
+changes<-tapply(strsplit(tf6$seq,''),tf6$file,function(splits){
+  diffs<-which(splits[[1]]!=splits[[2]])
+  oneDown<-do.call(rbind,lapply(diffs,function(xx)substring(sapply(splits,paste,collapse=''),xx-1,xx)))
+  oneUp<-do.call(rbind,lapply(diffs,function(xx)substring(sapply(splits,paste,collapse=''),xx,xx+1)))
+  return(list(table(oneDown[,1],oneDown[,2]),table(oneUp[,1],oneUp[,2]),table(c(oneDown[,1],oneUp[,1]),c(oneDown[,2],oneUp[,2]))))
+})
+
+cgs<-sapply(names(changes),function(xx){
+  message('# ',sub(' .*$','',xx),' #')
+  up<-changes[[xx]][[1]]
+  down<-changes[[xx]][[2]]
+  message(' ',sum(up),' changes')
+  message()
+  zz<-changes[[xx]][[3]]
+  twoMers<-as.vector(outer(c('A','C','T','G'),c('A','C','T','G'),paste,sep=''))
+  changes<-do.call(c,lapply(twoMers,function(twoMer){
+    out<-c(
+      ifelse(twoMer %in% rownames(zz),sum(zz[twoMer,]),0),
+      ifelse(twoMer %in% colnames(zz),sum(zz[,twoMer]),0)
+    )
+    names(out)<-sprintf(c('from%s','to%s'),twoMer)
+    out
+  }))
+  return(changes)
+})
+colnames(cgs)<-sub(' .*$','',colnames(cgs))
+
