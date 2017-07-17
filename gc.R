@@ -80,9 +80,11 @@ for(ii in unique(hiv$Pair.ID)){
 
 
 
-tf6<-readFaDir('gc')
+tf6<-readFaDir('gc','CH')
 tf6$tf<-grepl('[tT]/?[fF]',tf6$name)
 tf6<-tf6[order(tf6$file,!tf6$tf),]
+tf6$seq<-toupper(tf6$seq)
+write.fa(tf6$name,tf6$seq,'out/allTf6month.fa')
 if(!file.exists('out/tf.png')){
   png('out/tf.png',height=3000,width=3000,res=300)
   plotDNA(tf6$seq)
@@ -114,4 +116,6 @@ cgs<-sapply(names(changes),function(xx){
   return(changes)
 })
 colnames(cgs)<-sub(' .*$','',colnames(cgs))
+
+determinants<-read.csv("gc/determinants.csv",stringsAsFactors=FALSE)
 
