@@ -85,6 +85,15 @@ tf6$tf<-grepl('[tT]/?[fF]',tf6$name)
 tf6<-tf6[order(tf6$file,!tf6$tf),]
 tf6$seq<-toupper(tf6$seq)
 write.fa(tf6$name,tf6$seq,'out/allTf6month.fa')
+tf6Align<-readFaDir('gc/allAlign','fasta$')
+for(ii in unique(tf6Align$file[!tf6Align$file %in% c('LTR.nt.fasta','AlignSeq.nt.fasta')])){
+  seqs<-degap(substring(tf6Align[tf6Align$file==ii,'seq'],1,30))
+  names(seqs)<-tf6Align[tf6Align$file==ii,'name']
+  tf6[,sub('.nt.fasta','',ii)]<- mapply(function(xx,yy)gregexpr(xx,yy)[[1]],seqs[tf6$name],tf6$seq)
+}
+if(any(tf6[,sub('.nt.fasta','',unique(tf6Align$file[!tf6Align$file %in% c('LTR.nt.fasta','AlignSeq.nt.fasta')]))])==-1)stop('Problem finding proteins')
+
+
 if(!file.exists('out/tf.png')){
   png('out/tf.png',height=3000,width=3000,res=300)
   plotDNA(tf6$seq)
@@ -118,4 +127,15 @@ cgs<-sapply(names(changes),function(xx){
 colnames(cgs)<-sub(' .*$','',colnames(cgs))
 
 determinants<-read.csv("gc/determinants.csv",stringsAsFactors=FALSE)
+dets<-lapply(strsplit(determinants$Determinants.of.IFN.resistance, ', '),function(xx){
+  xx<-xx[grepl('[0-9]',xx)]
+  if(length(xx)==0)return(NULL)
+  out<-do.call(rbind,strsplit(gsub('[()]','',xx),' '))
+  if(any(probs<-grepl('-',out[,2]))){
+    coords<-lapply(strsplit(sub('Δ','',out[probs,2]),'-'),as.numeric)
+    reps<-lapply(coords,function(xx)xx[1]:xx[2])
+    out<-rbind(out[!probs,], matrix(c(rep(out[probs,1],sapply(reps,length)),unlist(reps)),ncol=2))
+  }
+  return(out)
+})
 
