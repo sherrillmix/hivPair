@@ -85,6 +85,7 @@ tf6$tf<-grepl('[tT]/?[fF]',tf6$name)
 tf6<-tf6[order(tf6$file,!tf6$tf),]
 tf6$seq<-toupper(tf6$seq)
 write.fa(tf6$name,tf6$seq,'out/allTf6month.fa')
+#align with https://www.hiv.lanl.gov/cgi-bin/VIRALIGN/viralign.cgi
 tf6Align<-readFaDir('gc/allAlign','fasta$')
 for(ii in unique(tf6Align$file[!tf6Align$file %in% c('LTR.nt.fasta','AlignSeq.nt.fasta')])){
   seqs<-degap(substring(tf6Align[tf6Align$file==ii,'seq'],1,30))
@@ -127,7 +128,7 @@ cgs<-sapply(names(changes),function(xx){
 colnames(cgs)<-sub(' .*$','',colnames(cgs))
 
 determinants<-read.csv("gc/determinants.csv",stringsAsFactors=FALSE)
-dets<-lapply(strsplit(determinants$Determinants.of.IFN.resistance, ', '),function(xx){
+tmp<-lapply(strsplit(determinants$Determinants.of.IFN.resistance, ', '),function(xx){
   xx<-xx[grepl('[0-9]',xx)]
   if(length(xx)==0)return(NULL)
   out<-do.call(rbind,strsplit(gsub('[()]','',xx),' '))
@@ -138,4 +139,31 @@ dets<-lapply(strsplit(determinants$Determinants.of.IFN.resistance, ', '),functio
   }
   return(out)
 })
-
+detIds<-rep(determinants$Subject,sapply(tmp,function(xx)ifelse(is.null(xx),0,nrow(xx))))
+dets<-as.data.frame(do.call(rbind,tmp),stringsAsFactors=FALSE)
+colnames(dets)<-c('prot','codon')
+dets$codon<-as.numeric(dets$codon)
+dets$id<-detIds
+dets$tf<-NA
+dets$month6<-NA
+for(ii in 1:nrow(dets)){
+  thisViruses<-tf6[grepl(dets[ii,'id'],tf6$file),]
+  thisProt<-tf6Align[grepl(dets[ii,'prot'],tf6Align$file),]
+  rownames(thisProt)<-thisProt$name
+  thisAligns<-thisProt[thisViruses$name,'seq']
+  alignSplit<-do.call(rbind,strsplit(thisAligns,''))
+  thisAligns<-apply(alignSplit[,!apply(alignSplit,2,function(x)all(x=='-'))],1,paste,collapse='')
+  codonPos<-1+(dets[ii,'codon']-1)*3
+  dets[ii,c('tf','month6')]<-substring(thisAligns,codonPos-1,codonPos+3)
+  #startCodon<-thisViruses[,dets[ii,'prot']]
+  #thisStart<-startCodon+(dets[ii,'codon']-1)*3
+  #dets[ii,c('tf','month6')]<-substring(thisViruses$seq,thisStart-1,thisStart+3)
+}
+if(any(dets$tf==dets$month6))stop('Found identical tf/6  where should be different')
+dets$tfCG<-grepl('CG',dets$tf)lost
+dets$month6CG<-grepl('CG',dets$month6)
+dets$cg<-'-'
+dets$cg[dets$tfCG&!dets$month6CG]<-'lost'
+dets$cg[!dets$tfCG&dets$month6CG]<-'gain'
+dets$cg[dets$tfCG&dets$month6CG]<-'maintained'
+write.csv(dets[,c('id','prot','codon','tf','month6','cg')],'out/determinants.csv')
