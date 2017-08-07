@@ -487,3 +487,18 @@ pdf('out/bayes/probabilityOfRecipient.pdf',height=20,width=8)
   }
 dev.off()
 
+pdf('out/bayes/probabilityOfRecipientPaged.pdf',height=5,width=8)
+  for(type in names(recipientMinus2Sd[[1]])){
+    for(ii in names(recipientMinus2Sd)){
+      message(ii)
+      plot(1,1,type='n',xlim=c(-10,0),ylim=c(0,.1),xlab=sprintf('Proportion of donor virus reaching %s levels',type),ylab='Posterior probability',main=sprintf('%s',targetCols[ii]),xaxs='i',las=1,xaxt='n')
+      axis(1,-40:0,rep('',41),tcl=-.1)
+      axis(1,seq(-40,0,10),sapply(seq(-40,0,10), function(x) as.expression(bquote(10^.(x)))))
+      tabbed<-apply(recipientMinus2Sd[[ii]][[type]],2,function(x)table(cut(x,bins))/length(x))
+      for(jj in 1:ncol(recipientMinus2Sd[[ii]][[type]])){
+        polygon((c(probRange[1],meanBin,probRange[2],probRange[1])),c(0,tabbed[,jj],0,0),col='#00000044',border='#00000099')
+      }
+    }
+  }
+dev.off()
+
