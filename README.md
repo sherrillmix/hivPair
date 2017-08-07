@@ -45,13 +45,13 @@ Plot output should resemble:
 ![ROC plot](examples/roc-0.png)
 
 ### Box and whisker
-![Box and whisker plot](examples/Env_RT ratio.png)
+![Box and whisker plot](examples/Env_RT_ratio.png)
 
 ### Seven line point plot
-![Seven line point plot](examples/7line_IFNbeta Vres.png)
+![Seven line point plot](examples/7line_IFNbeta_Vres.png)
 
 ### Bayesian
 Note that stochastic sampling is used to estimate the posterior probabilities so the plots from each run will be slightly different. Also the final figures for the paper were generated using additional iterations to produce smoother estimates.
 
-![Bayesian posterior distributions](examples/bayesIFNbeta IC50 (pg_ml).png)
+![Bayesian posterior distributions](examples/bayesIFNbeta_IC50__pg_ml_.png)
 
