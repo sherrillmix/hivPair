@@ -1,0 +1,17 @@
+if(!exists('hiv'))source('readData.R')
+xx<-hiv[hiv$fluid=='PL'&hiv$select=='UT',]
+pdf('out/donorRecipientCompare.pdf',width=8,height=4)
+par(mar=c(4.1,4.1,.5,.1))
+posFac<-as.factor(xx$sample)
+legendLetters<-LETTERS[as.numeric(sub('-[0-9]+$','',sub('Donor |Recipient ','',levels(posFac))))]
+pos<-as.numeric(posFac)
+spread<-offsetX(log10(xx$IFNbeta.Pooled.Donor.cells.IC50..pg.ml),pos,width=.2)
+plot(pos+spread,xx$IFNbeta.Pooled.Donor.cells.IC50..pg.ml,bg=ifelse(xx$donor,'#E581A0E6','#9EC0E1E6'),pch=21,col='#00000099',log='y',yaxt='n',ylab='Interferon resistance (IFNb IC50)',xlab='',xaxt='n',cex=1.2,bty='n',cex.lab=1.3)
+par(lheight=.75)
+axis(1,max(pos)*c(.25),c('Chronic\nDonors'),mgp=c(3,1.5,0)+1.25,cex.axis=1.2)
+axis(1,c(1,7),c('',''),mgp=c(3,1.5,0)+1.25,tcl=.2)
+axis(1,c(8,15),c('',''),mgp=c(3,1.5,0)+1.25,tcl=.2)
+axis(1,max(pos)*c(.75),c('Acute\nRecipients'),mgp=c(3,1.5,0)+1.25,cex.axis=1.2)
+axis(1,1:length(legendLetters),legendLetters,tick=FALSE,mgp=c(0,0,0))
+logAxis(las=1)
+dev.off()
